@@ -6,6 +6,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 import android.view.MotionEvent
 import android.view.View
 import org.json.JSONObject
@@ -73,6 +75,42 @@ class DrawingView(context: Context) : View(context) {
         clearPage()
         requestLayout()
         invalidate()
+        emitPaperFrame()
+    }
+
+    /** Re-send the current page and its visible ink after a reconnect. */
+    fun synchronizeToRemote() {
+        finishCurrentStroke()
+        emit(JSONObject().put("type", "clear"))
+        emitPaperFrame()
+        strokes.forEach { stroke ->
+            val first = stroke.points.firstOrNull() ?: return@forEach
+            emit(JSONObject()
+                .put("type", "begin")
+                .put("mode", "draw")
+                .put("x", first.x).put("y", first.y).put("p", first.pressure)
+                .put("color", String.format(Locale.US, "#%08X", stroke.color))
+                .put("width", stroke.widthRatio))
+            for (index in 1 until stroke.points.size) {
+                val point = stroke.points[index]
+                emit(JSONObject().put("type", "point")
+                    .put("x", point.x).put("y", point.y).put("p", point.pressure))
+            }
+            emit(JSONObject().put("type", "end"))
+        }
+    }
+
+    private fun emitPaperFrame() {
+        val frame = JSONObject()
+            .put("type", "paper")
+            .put("aspect", pageAspectRatio.toDouble())
+        val bitmap = pageBackground
+        if (bitmap != null && !bitmap.isRecycled) {
+            val bytes = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 82, bytes)
+            frame.put("image", Base64.encodeToString(bytes.toByteArray(), Base64.NO_WRAP))
+        }
+        emit(frame)
     }
 
     fun clearPage() {
