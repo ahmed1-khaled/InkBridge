@@ -1,8 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#08111e"/><stop offset="1" stop-color="#142b46"/></linearGradient><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#83e8dc"/><stop offset="1" stop-color="#8ea4ff"/></linearGradient><radialGradient id="glow"><stop stop-color="#4b70e8" stop-opacity=".35"/><stop offset="1" stop-color="#4b70e8" stop-opacity="0"/></radialGradient></defs>
-<rect width="1200" height="630" fill="url(#bg)"/><ellipse cx="940" cy="300" rx="430" ry="300" fill="url(#glow)"/>
-<g transform="translate(92 118)"><rect width="72" height="72" rx="20" fill="#162b45" stroke="#8ab9ec" stroke-opacity=".45"/><path d="m18 49 30-30a5 5 0 0 1 7 7L25 56l-10 2 3-9Z" fill="none" stroke="url(#a)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><text x="92" y="51" fill="#f3f7ff" font-family="Arial,sans-serif" font-weight="700" font-size="47">ink<tspan fill="#83e1de">bridge</tspan></text></g>
-<text x="92" y="320" fill="#f5f8ff" font-family="Arial,sans-serif" font-size="58" font-weight="700">Your tablet.</text><text x="92" y="390" fill="url(#a)" font-family="Arial,sans-serif" font-size="58" font-weight="700">Your writing surface.</text><text x="95" y="451" fill="#a9bad1" font-family="Arial,sans-serif" font-size="23">Write on Android. See every stroke live on Windows.</text>
-<g transform="translate(760 120)"><rect width="350" height="235" rx="18" fill="#14243a" stroke="#8aa8d5" stroke-opacity=".55"/><rect x="12" y="12" width="326" height="211" rx="10" fill="#0b1421"/><rect x="40" y="38" width="270" height="170" rx="5" fill="#fbfcff"/><path d="M70 78h205m-205 23h205m-205 23h205m-205 23h205" stroke="#dce6f1" stroke-width="2"/><path d="M90 84c25-12 57-9 80 1m-80 22c47-13 83-8 112 3m-110 26c35-10 73-7 106 5" stroke="#4579bd" stroke-width="4" stroke-linecap="round"/><rect x="-32" y="245" width="414" height="17" rx="8" fill="#61748e"/><rect x="-16" y="250" width="382" height="4" rx="2" fill="#18283e"/></g>
-<text x="95" y="565" fill="#88a3c4" font-family="Arial,sans-serif" font-size="18">LOCAL WI-FI  ·  PDF NOTES  ·  WINDOWS COMPANION</text>
+  <rect width="1200" height="630" fill="#202124"/>
+  <path d="M0 458H1200" stroke="#42484a"/>
+  <g transform="translate(92 88)">
+    <rect width="48" height="48" rx="11" fill="#303a3b" stroke="#566361"/>
+    <path d="m11 34 21-21a4 4 0 0 1 6 6L17 40l-7 2 1-8Z" fill="none" stroke="#91dcd1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="65" y="35" fill="#f2f4f3" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="700">ink<tspan fill="#91dcd1">bridge</tspan></text>
+  </g>
+  <text x="92" y="260" fill="#f2f4f3" font-family="Segoe UI,Arial,sans-serif" font-size="66" font-weight="700">Your tablet.</text>
+  <text x="92" y="338" fill="#91dcd1" font-family="Segoe UI,Arial,sans-serif" font-size="66" font-weight="700">Your writing surface.</text>
+  <text x="96" y="397" fill="#b1b8b7" font-family="Segoe UI,Arial,sans-serif" font-size="23">Write on Android. See every stroke live on Windows.</text>
+  <g transform="translate(735 108)">
+    <rect width="370" height="250" rx="13" fill="#303639" stroke="#687174" stroke-width="2"/>
+    <rect x="11" y="11" width="348" height="226" rx="7" fill="#1b2225"/>
+    <rect x="26" y="27" width="105" height="196" rx="5" fill="#293235"/>
+    <path d="M40 55h70m-70 15h70m-70 28h70m-70 15h58m-58 28h70" stroke="#71817e" stroke-width="3" stroke-linecap="round"/>
+    <rect x="145" y="27" width="198" height="196" rx="5" fill="#171e21"/>
+    <rect x="181" y="43" width="127" height="164" rx="2" fill="#fbfcff"/>
+    <path d="M196 69h97m-97 19h97m-97 19h97m-97 19h97m-97 19h97m-97 19h97" stroke="#dce6f1" stroke-width="2"/>
+    <path d="M202 76c18-8 38-6 57 2m-58 23c22-7 44-6 66 2m-61 25c25-8 45-5 59 2" fill="none" stroke="#4579bd" stroke-width="3" stroke-linecap="round"/>
+    <path d="M-25 252h420l-18 13H-7Z" fill="#687477"/>
+  </g>
+  <g transform="translate(98 510)" fill="#9bd8ce" font-family="Segoe UI,Arial,sans-serif" font-size="18" letter-spacing="2">
+    <text>LOCAL WI-FI</text><circle cx="173" cy="-6" r="3"/><text x="193">PDF NOTES</text><circle cx="345" cy="-6" r="3"/><text x="365">WINDOWS COMPANION</text>
+  </g>
 </svg>
