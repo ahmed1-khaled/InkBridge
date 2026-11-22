@@ -1,57 +1,48 @@
 # Build and release
 
-## GitHub Actions (recommended)
+## Local requirements
 
-The workflow at `.github/workflows/build.yml` builds both deliverables on GitHub-hosted runners. It uses the current major releases of the GitHub-hosted workflow actions and pins the Android Gradle Plugin/Gradle pair to a compatible, conservative toolchain:
+- Android Studio or JDK 17 plus Android SDK Platform 35 and Build Tools 35.
+- Gradle 8.9 (the Actions workflow configures it automatically).
+- .NET 8 SDK for the Windows WPF companion.
 
-- Android: debug APK from `:android-app:assembleDebug`.
-- Windows: self-contained, single-file x64 `.exe` using .NET 8.
+## GitHub Actions
 
-Run **Actions → Build InkBridge → Run workflow** and download the two artifacts from the workflow run. The first Android build downloads the required SDK/build tools.
+The workflow .github/workflows/build.yml runs on every push to main:
+- Android job builds a signed Release APK only when Android signing secrets exist; otherwise it produces a debug-only APK artifact.
+- Windows job publishes a self-contained win-x64 executable.
+- Release job uploads both apps and SHA256 digests to a versioned GitHub Release only after signed Android and Windows builds succeed.
 
-To publish a versioned GitHub Release, push a tag such as:
+Open Actions → Build and publish InkBridge to inspect logs and download artifacts.
 
-```powershell
-git tag v0.1.0-alpha
-git push origin v0.1.0-alpha
-```
+## First Android signing key
 
-The workflow attaches the APK and EXE to the release automatically.
+For the in-place Android update flow, run scripts/setup-android-signing.ps1 once from Windows PowerShell. Follow AUTO_UPDATES.md and protect the generated keystore. The same key is required for every future APK release.
 
-## Create the GitHub repository from this folder
+## Local Android build
 
-The prepared project folder includes `scripts/create-github-repo.ps1`. On Windows:
+~~~powershell
+gradle --no-daemon :android-app:assembleDebug
+~~~
 
-1. Install Git for Windows and GitHub CLI (`gh`).
-2. Open PowerShell in the extracted `InkBridge` folder.
-3. Run `gh auth login` and finish browser authentication.
-4. Run:
+The APK is written under android-app/build/outputs/apk/debug/.
 
-   ```powershell
-   Set-ExecutionPolicy -Scope Process Bypass
-   .\scripts\create-github-repo.ps1 -Visibility public
-   ```
+For a signed local Release build, set the same signing environment variables described in android-app/build.gradle.kts and run:
 
-The script initializes Git if needed, creates `ahmed1-khaled/InkBridge`, and pushes the current branch. Use `-Visibility private` to keep the repo private.
+~~~powershell
+gradle --no-daemon :android-app:assembleRelease
+~~~
 
-## Local Windows EXE build
+## Local Windows build
 
-Install .NET 8 SDK, then run:
+~~~powershell
+dotnet publish windows-companion/InkBridge.Companion.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output publish
+~~~
 
-```powershell
-.\scripts\build-windows.ps1
-```
+Output: publish/InkBridge.Companion.exe.
 
-Output: `publish/InkBridge.Companion.exe`.
+## Versioning
 
-## Local Android APK build
-
-Install JDK 17, Android SDK Platform 35 and Build Tools, plus Gradle 8.9. Then run:
-
-```powershell
-.\scripts\build-android.ps1
-```
-
-Output: `android-app/build/outputs/apk/debug/android-app-debug.apk`.
-
-This is a debug-signed APK for sideloading/testing. It is not a Play Store release. A production release needs a private signing key and a secure signing workflow; never commit a keystore or signing password.
+Actions injects an increasing GitHub Actions run number into both app versions. The Android app reads the latest Release tag v0.2.N; the Windows companion reads its own assembly version and compares it to the same release. The release asset names must remain:
+- InkBridge-Android.apk
+- InkBridge.Companion.exe
