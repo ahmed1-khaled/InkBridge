@@ -1,12 +1,7 @@
 package com.inkbridge.app
 
-import android.Manifest
 import android.app.Activity
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -21,8 +16,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
-import android.provider.Settings
 import android.view.Gravity
+import android.graphics.drawable.GradientDrawable
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -37,9 +35,10 @@ class MainActivity : Activity() {
     private lateinit var statusText: TextView
     private lateinit var connectButton: Button
     private lateinit var pageText: TextView
-    private lateinit var client: BluetoothSppClient
+    private lateinit var client: WifiTcpClient
+    private lateinit var fullScreenButton: Button
+    private var isFullScreen = false
 
-    private val permissionRequest = 4102
     private val openPdfRequest = 4103
     private val createPdfRequest = 4104
     private var touchInputEnabled = true
@@ -63,24 +62,25 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(15, 22, 32)
-        window.navigationBarColor = Color.rgb(15, 22, 32)
+        window.statusBarColor = Color.rgb(11, 18, 32)
+        window.navigationBarColor = Color.rgb(11, 18, 32)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        client = BluetoothSppClient(
+        client = WifiTcpClient(
             onState = { connected, message ->
                 runOnUiThread {
                     if (::statusText.isInitialized) {
                         statusText.text = when {
-                            connected -> "● Laptop connected"
+                            connected -> "● Wi-Fi connected"
                             message.startsWith("Connecting", true) -> "◌ Connecting…"
-                            else -> "○ Not connected"
+                            else -> "○ Wi-Fi not connected"
                         }
                     }
                     if (::connectButton.isInitialized) {
-                        connectButton.text = if (connected) "Disconnect" else if (message.startsWith("Connecting", true)) "Connecting…" else "Connect"
+                        connectButton.text = if (connected) "Disconnect" else if (message.startsWith("Connecting", true)) "Connecting…" else "Connect Wi-Fi"
                         connectButton.isEnabled = !message.startsWith("Connecting", true)
                     }
+                    if (connected && ::drawingView.isInitialized) drawingView.synchronizeToRemote()
                     if (!connected && !message.startsWith("Connecting", true) && message != "Disconnected") {
                         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
                     }
@@ -112,8 +112,8 @@ class MainActivity : Activity() {
     private fun buildUi() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(7), dp(5), dp(7), dp(5))
-            setBackgroundColor(Color.rgb(15, 22, 32))
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            setBackgroundColor(Color.rgb(11, 18, 32))
         }
 
         val header = LinearLayout(this).apply {
@@ -123,23 +123,29 @@ class MainActivity : Activity() {
         val brand = TextView(this).apply {
             text = "INKBRIDGE"
             textSize = 18f
-            letterSpacing = 0.08f
+            letterSpacing = 0.12f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
         statusText = TextView(this).apply {
-            text = "○ Not connected"
+            text = "○ Wi-Fi not connected"
             textSize = 11f
             maxLines = 1
             setTextColor(Color.rgb(167, 183, 204))
             gravity = Gravity.CENTER_VERTICAL
         }
-        connectButton = actionButton("Connect", Color.rgb(42, 126, 225), dp(112)) { onConnectClicked() }
-        connectButton.setOnLongClickListener { choosePairedDevice(); true }
+        connectButton = actionButton("Connect Wi-Fi", Color.rgb(54, 117, 232), dp(112)) { onConnectClicked() }
+        fullScreenButton = actionButton("Full screen", null, dp(96)) { toggleFullScreen() }
+        connectButton.setOnLongClickListener { showWifiConnectDialog(); true }
+        header.background = panelBackground(Color.rgb(18, 30, 45), 17)
+        header.setPadding(dp(12), dp(5), dp(8), dp(5))
         header.addView(brand, LinearLayout.LayoutParams(0, dp(48), 1.0f))
         header.addView(statusText, LinearLayout.LayoutParams(0, dp(48), 1.1f))
         header.addView(connectButton)
-        root.addView(header)
+        header.addView(fullScreenButton)
+        root.addView(header, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(58)).apply {
+            bottomMargin = dp(8)
+        })
 
         val documentTools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         documentTools.addView(actionButton("Open PDF", null, dp(94)) { openPdfPicker() })
@@ -160,9 +166,14 @@ class MainActivity : Activity() {
 
         val documentScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
+            background = panelBackground(Color.rgb(18, 30, 45), 15)
+            setPadding(dp(7), dp(5), dp(7), dp(5))
+            clipToPadding = false
             addView(documentTools)
         }
-        root.addView(documentScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
+        root.addView(documentScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply {
+            bottomMargin = dp(7)
+        })
 
         val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         tools.addView(actionButton("Pen", Color.rgb(44, 59, 79), dp(55)) { drawingView.setTool(DrawingView.Tool.PEN) })
@@ -180,25 +191,32 @@ class MainActivity : Activity() {
         })
         val toolsScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
+            background = panelBackground(Color.rgb(18, 30, 45), 15)
+            setPadding(dp(7), dp(5), dp(7), dp(5))
+            clipToPadding = false
             addView(tools)
         }
-        root.addView(toolsScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
+        root.addView(toolsScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply {
+            bottomMargin = dp(7)
+        })
 
         drawingView = DrawingView(this).apply {
             setFrameSink { frame -> client.send(frame) }
             setStylusOnly(false)
             setBrushSizeDp(3.5f)
         }
+        drawingView.background = panelBackground(Color.rgb(24, 35, 51), 18)
+        drawingView.clipToOutline = true
         val canvasParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-        canvasParams.topMargin = dp(4)
-        canvasParams.bottomMargin = dp(3)
+        canvasParams.topMargin = dp(2)
+        canvasParams.bottomMargin = dp(5)
         root.addView(drawingView, canvasParams)
 
         val hint = TextView(this).apply {
-            text = "Pair once · Connect · Write · Save as PDF"
-            textSize = 10f
+            text = "Same Wi-Fi · Connect · Write · Save as PDF"
+            textSize = 10.5f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(125, 145, 170))
+            setTextColor(Color.rgb(145, 164, 188))
         }
         root.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)))
         setContentView(root)
@@ -213,99 +231,84 @@ class MainActivity : Activity() {
             client.disconnect()
             return
         }
-        if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), permissionRequest)
-            return
-        }
-        connectRememberedOrPick()
+        showWifiConnectDialog()
     }
 
-    private fun connectRememberedOrPick() {
-        try {
-            val adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
-            if (adapter == null) {
-                showBluetoothHelp("This phone or tablet does not have Bluetooth.")
-                return
-            }
-            if (!adapter.isEnabled) {
-                startActivityForResult(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), 4105)
-                return
-            }
-            val paired = adapter.bondedDevices.toList()
-            if (paired.isEmpty()) {
-                showBluetoothHelp("Pair your Windows laptop with this device once in Android Bluetooth settings. Then return and tap Connect.")
-                return
-            }
-            val savedAddress = getSharedPreferences("inkbridge", MODE_PRIVATE).getString("laptop_address", null)
-            val remembered = paired.firstOrNull { it.address == savedAddress }
-            if (remembered != null) {
-                connectTo(remembered)
-            } else if (paired.size == 1) {
-                connectTo(paired.first())
-            } else {
-                choosePairedDevice(paired)
-            }
-        } catch (e: SecurityException) {
-            Toast.makeText(this, "Allow Nearby devices permission, then tap Connect again.", Toast.LENGTH_LONG).show()
+    private fun showWifiConnectDialog() {
+        val prefs = getSharedPreferences("inkbridge", MODE_PRIVATE)
+        val hostInput = EditText(this).apply {
+            hint = "Laptop IP address (e.g. 192.168.1.20)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
+            setSingleLine(true)
+            setText(prefs.getString("wifi_host", ""))
         }
-    }
-
-    private fun choosePairedDevice(devices: List<BluetoothDevice>? = null) {
-        if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), permissionRequest)
-            return
+        val codeInput = EditText(this).apply {
+            hint = "6-digit code shown in InkBridge on the laptop"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setSingleLine(true)
+            filters = arrayOf(android.text.InputFilter.LengthFilter(6))
+            setText(prefs.getString("wifi_code", ""))
         }
-        try {
-            val paired = devices ?: (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter?.bondedDevices?.toList().orEmpty()
-            if (paired.isEmpty()) {
-                showBluetoothHelp("No paired laptop found. Pair Windows and this device in Bluetooth settings first.")
-                return
-            }
-            val names = paired.map { safeDeviceName(it) }.toTypedArray()
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Choose your laptop")
-                .setItems(names) { _, index ->
-                    getSharedPreferences("inkbridge", MODE_PRIVATE).edit().putString("laptop_address", paired[index].address).apply()
-                    connectTo(paired[index])
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Could not list paired Bluetooth devices: ${e.message}", Toast.LENGTH_LONG).show()
+        val fields = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(22), dp(8), dp(22), dp(4))
+            addView(TextView(this@MainActivity).apply {
+                text = "Connect both devices to the same Wi-Fi network or hotspot. Enter the IP and the 6-digit code shown in InkBridge on Windows."
+                textSize = 13f
+                setTextColor(Color.rgb(190, 202, 220))
+                setPadding(0, 0, 0, dp(12))
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = "LAPTOP IP ADDRESS"
+                textSize = 10f
+                setTextColor(Color.rgb(130, 158, 195))
+            })
+            addView(hostInput)
+            addView(TextView(this@MainActivity).apply {
+                text = "CONNECTION CODE"
+                textSize = 10f
+                setTextColor(Color.rgb(130, 158, 195))
+                setPadding(0, dp(10), 0, 0)
+            })
+            addView(codeInput)
         }
-    }
 
-    private fun connectTo(device: BluetoothDevice) {
-        try {
-            BluetoothAdapter.getDefaultAdapter()?.cancelDiscovery()
-        } catch (_: Exception) { }
-        getSharedPreferences("inkbridge", MODE_PRIVATE).edit().putString("laptop_address", device.address).apply()
-        statusText.text = "◌ Connecting to ${safeDeviceName(device)}"
-        connectButton.isEnabled = false
-        client.connect(device)
-    }
-
-    private fun safeDeviceName(device: BluetoothDevice): String = try {
-        device.name ?: "Bluetooth device"
-    } catch (_: SecurityException) { "Bluetooth device" }
-
-    private fun showBluetoothHelp(message: String) {
         android.app.AlertDialog.Builder(this)
             .setTitle("Connect to your laptop")
-            .setMessage(message)
-            .setPositiveButton("Open Bluetooth settings") { _, _ ->
-                startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+            .setView(fields)
+            .setPositiveButton("Connect") { _, _ ->
+                val host = hostInput.text.toString().trim()
+                val code = codeInput.text.toString().trim()
+                if (host.isBlank() || code.length != 6 || !code.all(Char::isDigit)) {
+                    Toast.makeText(this, "Enter the laptop IP and its 6-digit connection code.", Toast.LENGTH_LONG).show()
+                    showWifiConnectDialog()
+                } else {
+                    prefs.edit().putString("wifi_host", host).putString("wifi_code", code).apply()
+                    statusText.text = "◌ Connecting over Wi-Fi…"
+                    connectButton.isEnabled = false
+                    client.connect(host, code)
+                }
             }
-            .setNegativeButton("Not now", null)
+            .setNegativeButton("Cancel", null)
             .show()
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == permissionRequest) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) connectRememberedOrPick()
-            else Toast.makeText(this, "Nearby devices permission is required for Bluetooth.", Toast.LENGTH_LONG).show()
-        }
+    private fun toggleFullScreen() {
+        isFullScreen = !isFullScreen
+        applyImmersiveMode()
+        fullScreenButton.text = if (isFullScreen) "Exit full screen" else "Full screen"
+    }
+
+    private fun applyImmersiveMode() {
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (isFullScreen) controller.hide(WindowInsetsCompat.Type.systemBars())
+        else controller.show(WindowInsetsCompat.Type.systemBars())
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && isFullScreen) window.decorView.post { applyImmersiveMode() }
     }
 
     private fun chooseColor() {
@@ -590,19 +593,33 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun actionButton(label: String, background: Int?, width: Int = 0, action: (View) -> Unit): Button = Button(this).apply {
+    private fun panelBackground(fill: Int, radiusDp: Int): GradientDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = dp(radiusDp).toFloat()
+        setColor(fill)
+        setStroke(dp(1), Color.rgb(42, 58, 78))
+    }
+
+    private fun actionButton(label: String, buttonColor: Int?, width: Int = 0, action: (View) -> Unit): Button = Button(this).apply {
         text = label
-        textSize = 10.5f
+        textSize = 11f
         isAllCaps = false
         setTextColor(Color.WHITE)
-        backgroundTintList = android.content.res.ColorStateList.valueOf(background ?: Color.rgb(38, 53, 72))
+        backgroundTintList = null
+        background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(12).toFloat()
+            setColor(buttonColor ?: Color.rgb(30, 43, 62))
+            setStroke(dp(1), Color.rgb(48, 65, 88))
+        }
         minWidth = 0
         minimumWidth = 0
-        minimumHeight = dp(36)
-        setPadding(dp(5), 0, dp(5), 0)
+        minimumHeight = dp(40)
+        elevation = dp(1).toFloat()
+        setPadding(dp(7), 0, dp(7), 0)
         setOnClickListener(action)
-        layoutParams = LinearLayout.LayoutParams(if (width > 0) width else ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)).apply {
-            marginEnd = dp(4)
+        layoutParams = LinearLayout.LayoutParams(if (width > 0) width else ViewGroup.LayoutParams.WRAP_CONTENT, dp(40)).apply {
+            marginEnd = dp(5)
         }
     }
 

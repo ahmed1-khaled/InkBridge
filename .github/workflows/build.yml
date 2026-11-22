@@ -67,14 +67,14 @@ jobs:
         run: |
           gradle --no-daemon :android-app:assembleRelease \
             -PinkbridgeVersionCode="$GITHUB_RUN_NUMBER" \
-            -PinkbridgeVersionName="0.2.$GITHUB_RUN_NUMBER"
+            -PinkbridgeVersionName="0.3.$GITHUB_RUN_NUMBER"
 
       - name: Build debug APK (until release signing is configured)
         if: steps.signing.outputs.enabled != 'true'
         run: |
           gradle --no-daemon :android-app:assembleDebug \
             -PinkbridgeVersionCode="$GITHUB_RUN_NUMBER" \
-            -PinkbridgeVersionName="0.2.$GITHUB_RUN_NUMBER"
+            -PinkbridgeVersionName="0.3.$GITHUB_RUN_NUMBER"
 
       - name: Upload signed release APK
         if: steps.signing.outputs.enabled == 'true'
@@ -113,7 +113,7 @@ jobs:
             --configuration Release `
             --runtime win-x64 `
             --self-contained true `
-            -p:Version=0.2.${{ github.run_number }} `
+            -p:Version=0.3.${{ github.run_number }} `
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true `
@@ -162,8 +162,8 @@ jobs:
       - name: Publish this build as the latest GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.2.${{ github.run_number }}
-          name: InkBridge v0.2.${{ github.run_number }}
+          tag_name: v0.3.${{ github.run_number }}
+          name: InkBridge v0.3.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: true
           generate_release_notes: true

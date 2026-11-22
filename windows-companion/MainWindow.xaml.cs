@@ -1,27 +1,31 @@
 using System.IO;
-using InTheHand.Net.Sockets;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Diagnostics;
 
 namespace InkBridge.Companion;
 
 public partial class MainWindow : Window
 {
-    private static readonly Guid InkBridgeServiceId = Guid.Parse("00001101-0000-1000-8000-00805F9B34FB");
-    private BluetoothListener? _listener;
-    private BluetoothClient? _client;
+    private const int InkPort = 45832;
+    private const int MaxFrameLength = 8 * 1024 * 1024;
+
+    private TcpListener? _listener;
+    private TcpClient? _client;
     private StreamWriter? _writer;
-    private CancellationTokenSource? _bluetoothCts;
+    private CancellationTokenSource? _serverCts;
     private Task? _acceptTask;
     private readonly SemaphoreSlim _sendLock = new(1, 1);
-    private OverlayWindow? _overlay;
-    private bool _overlaySuppressed;
-    private bool _isListening;
     private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromMinutes(45) };
+    private OverlayWindow? _overlay;
+    private bool _overlaySuppressed = true;
+    private string _pairingCode = "";
 
     public MainWindow()
     {
@@ -34,96 +38,219 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        await StartBluetoothAsync();
+        _pairingCode = LoadOrCreatePairingCode();
+        PairingCodeText.Text = _pairingCode;
+        RefreshNetworkAddresses();
+        StartWifiServer();
         await CheckUpdatesAsync(manual: false);
     }
 
-    private async void StartBluetoothButton_Click(object sender, RoutedEventArgs e) => await StartBluetoothAsync();
-
-    private async Task StartBluetoothAsync()
+    private static string LoadOrCreatePairingCode()
     {
-        if (_isListening) return;
+        var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "InkBridge");
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, "wifi-pairing-code.txt");
+        if (File.Exists(path))
+        {
+            var existing = File.ReadAllText(path).Trim();
+            if (existing.Length == 6 && existing.All(char.IsDigit)) return existing;
+        }
+
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        File.WriteAllText(path, code, new UTF8Encoding(false));
+        return code;
+    }
+
+    private void RefreshNetworkAddresses()
+    {
         try
         {
-            _bluetoothCts = new CancellationTokenSource();
-            _listener = new BluetoothListener(InkBridgeServiceId)
-            {
-                ServiceName = "InkBridge"
-            };
-            _listener.Start();
-            _isListening = true;
-            StartBluetoothButton.Content = "Bluetooth ready";
-            StartBluetoothButton.IsEnabled = false;
-            SetConnectionBadge("WAITING FOR TABLET", Brushes.LightSkyBlue);
-            Log("Bluetooth service is live. Pair the tablet with this PC, open InkBridge on Android and tap Connect.");
-            _acceptTask = AcceptLoopAsync(_bluetoothCts.Token);
+            var addresses = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(adapter => adapter.OperationalStatus == OperationalStatus.Up &&
+                                  adapter.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                .SelectMany(adapter => adapter.GetIPProperties().UnicastAddresses
+                    .Where(item => item.Address.AddressFamily == AddressFamily.InterNetwork &&
+                                   !IPAddress.IsLoopback(item.Address) &&
+                                   !item.Address.ToString().StartsWith("169.254.", StringComparison.Ordinal))
+                    .Select(item => new
+                    {
+                        Priority = adapter.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ? 0 :
+                                   adapter.NetworkInterfaceType == NetworkInterfaceType.Ethernet ? 1 : 2,
+                        Adapter = adapter.Name,
+                        Address = item.Address.ToString()
+                    }))
+                .OrderBy(item => item.Priority)
+                .ThenBy(item => item.Adapter, StringComparer.OrdinalIgnoreCase)
+                .Take(5)
+                .ToList();
+
+            NetworkAddressText.Text = addresses.Count == 0
+                ? "No network address found. Connect this PC to Wi-Fi or Ethernet, then restart the service."
+                : string.Join(Environment.NewLine, addresses.Select(item => $"{item.Address}   ·   {item.Adapter}"));
         }
         catch (Exception ex)
         {
-            _isListening = false;
-            StartBluetoothButton.Content = "Try Bluetooth again";
-            StartBluetoothButton.IsEnabled = true;
-            SetConnectionBadge("BLUETOOTH NOT READY", Brushes.Orange);
-            Log($"Could not start the Bluetooth service: {ex.Message}");
-            Log("Check that Windows Bluetooth is enabled and the Bluetooth adapter/driver supports Classic RFCOMM.");
+            NetworkAddressText.Text = $"Could not read network addresses: {ex.Message}";
         }
-        await Task.CompletedTask;
     }
 
-    private async Task AcceptLoopAsync(CancellationToken token)
+    private void StartWifiServer()
     {
-        while (!token.IsCancellationRequested && _listener is not null)
+        if (_listener is not null) return;
+        try
         {
-            BluetoothClient? incoming = null;
+            var listener = new TcpListener(IPAddress.Any, InkPort);
+            listener.Start(8);
+            _listener = listener;
+            _serverCts = new CancellationTokenSource();
+            RestartServerButton.Content = "Wi-Fi service running";
+            SetConnectionBadge("WI-FI READY · WAITING FOR TABLET", Brushes.LightSkyBlue);
+            PreviewStatusText.Text = "Waiting for your tablet to connect over the same network.";
+            Log($"Wi-Fi ink service is listening on TCP port {InkPort}.");
+            Log("Connect both devices to the same Wi-Fi network or hotspot, then enter one of the IP addresses and the 6-digit code in Android.");
+            Log("If Windows Firewall asks, allow InkBridge on Private networks.");
+            _acceptTask = AcceptLoopAsync(listener, _serverCts.Token);
+        }
+        catch (Exception ex)
+        {
+            _listener = null;
+            RestartServerButton.Content = "Retry Wi-Fi service";
+            SetConnectionBadge("WI-FI SERVICE ERROR", Brushes.Orange);
+            Log($"Could not start the Wi-Fi service: {ex.Message}");
+            Log("Check whether another application is using TCP port 45832.");
+        }
+    }
+
+    private async void RestartServerButton_Click(object sender, RoutedEventArgs e)
+    {
+        await StopWifiServerAsync();
+        RefreshNetworkAddresses();
+        StartWifiServer();
+    }
+
+    private async Task StopWifiServerAsync()
+    {
+        var listener = _listener;
+        var cts = _serverCts;
+        _listener = null;
+        _serverCts = null;
+        try { cts?.Cancel(); } catch { }
+        try { listener?.Stop(); } catch { }
+        try { _client?.Close(); } catch { }
+        if (_acceptTask is not null)
+        {
+            try { await Task.WhenAny(_acceptTask, Task.Delay(1200)); } catch { }
+        }
+        try { cts?.Dispose(); } catch { }
+        _acceptTask = null;
+    }
+
+    private async Task AcceptLoopAsync(TcpListener listener, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            TcpClient? incoming = null;
             try
             {
-                incoming = await _listener.AcceptBluetoothClientAsync();
-                _client = incoming;
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    SetConnectionBadge("TABLET CONNECTED", Brushes.LightGreen);
-                    Log("Tablet connected. Ready to receive pen strokes.");
-                });
-
-                using var stream = incoming.GetStream();
-                using var reader = new StreamReader(stream, Encoding.UTF8, false, 2048, leaveOpen: true);
-                using var writer = new StreamWriter(stream, new UTF8Encoding(false), 2048, leaveOpen: true)
-                {
-                    AutoFlush = true,
-                    NewLine = "\n"
-                };
-                _writer = writer;
-
-                while (!token.IsCancellationRequested)
-                {
-                    var line = await reader.ReadLineAsync(token);
-                    if (line is null) break;
-                    if (line.Length == 0 || line.Length > 32768) continue;
-                    await Dispatcher.InvokeAsync(() => ProcessFrame(line));
-                }
+                incoming = await listener.AcceptTcpClientAsync(token);
+                incoming.NoDelay = true;
+                await HandleIncomingClientAsync(incoming, token);
             }
             catch (OperationCanceledException) { break; }
             catch (ObjectDisposedException) when (token.IsCancellationRequested) { break; }
+            catch (SocketException) when (token.IsCancellationRequested) { break; }
             catch (Exception ex)
             {
                 if (!token.IsCancellationRequested)
-                    await Dispatcher.InvokeAsync(() => Log($"Bluetooth connection ended: {ex.Message}"));
+                    await Dispatcher.InvokeAsync(() => Log($"Connection listener error: {ex.Message}"));
             }
             finally
             {
-                _writer = null;
-                if (ReferenceEquals(_client, incoming)) _client = null;
-                try { incoming?.Close(); } catch { }
-                if (!token.IsCancellationRequested)
+                if (incoming is not null)
                 {
-                    await Dispatcher.InvokeAsync(() =>
-                    {
-                        SetConnectionBadge("WAITING FOR TABLET", Brushes.LightSkyBlue);
-                        Log("Disconnected. InkBridge is waiting for the tablet to reconnect.");
-                    });
+                    try { incoming.Close(); } catch { }
                 }
             }
         }
+    }
+
+    private async Task HandleIncomingClientAsync(TcpClient incoming, CancellationToken token)
+    {
+        using var stream = incoming.GetStream();
+        using var reader = new StreamReader(stream, new UTF8Encoding(false), false, 8192, leaveOpen: true);
+        using var writer = new StreamWriter(stream, new UTF8Encoding(false), 8192, leaveOpen: true)
+        {
+            AutoFlush = true,
+            NewLine = "\n"
+        };
+
+        var hello = await reader.ReadLineAsync(token);
+        if (string.IsNullOrWhiteSpace(hello) || hello.Length > 4096 || !IsValidHandshake(hello))
+        {
+            await writer.WriteLineAsync("{\"type\":\"denied\"}");
+            await Dispatcher.InvokeAsync(() => Log("Rejected a connection attempt: invalid or missing 6-digit connection code."));
+            return;
+        }
+
+        await writer.WriteLineAsync("{\"type\":\"welcome\",\"protocol\":2}");
+        _client = incoming;
+        _writer = writer;
+        await Dispatcher.InvokeAsync(() =>
+        {
+            SetConnectionBadge("TABLET CONNECTED", Brushes.LightGreen);
+            PreviewStatusText.Text = "Connected · receiving tablet page and pen strokes live.";
+            Log($"Authenticated tablet connection from {incoming.Client.RemoteEndPoint}.");
+        });
+
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                var line = await reader.ReadLineAsync(token);
+                if (line is null) break;
+                if (line.Length == 0 || line.Length > MaxFrameLength) continue;
+                await Dispatcher.InvokeAsync(() => ProcessFrame(line));
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (IOException ex)
+        {
+            if (!token.IsCancellationRequested)
+                await Dispatcher.InvokeAsync(() => Log($"Tablet stream closed: {ex.Message}"));
+        }
+        finally
+        {
+            if (ReferenceEquals(_client, incoming))
+            {
+                _client = null;
+                _writer = null;
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    if (_listener is not null)
+                    {
+                        SetConnectionBadge("WI-FI READY · WAITING FOR TABLET", Brushes.LightSkyBlue);
+                        PreviewStatusText.Text = "Tablet disconnected. Your last page remains in the preview until a new page is sent.";
+                    }
+                    Log("Tablet disconnected. InkBridge is ready for another connection.");
+                });
+            }
+        }
+    }
+
+    private bool IsValidHandshake(string line)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(line);
+            var root = document.RootElement;
+            if (root.GetProperty("type").GetString() != "hello") return false;
+            var supplied = root.GetProperty("token").GetString() ?? "";
+            var expectedBytes = Encoding.UTF8.GetBytes(_pairingCode);
+            var suppliedBytes = Encoding.UTF8.GetBytes(supplied);
+            return suppliedBytes.Length == expectedBytes.Length &&
+                   CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
+        }
+        catch { return false; }
     }
 
     private void ProcessFrame(string line)
@@ -133,19 +260,13 @@ public partial class MainWindow : Window
             using var json = JsonDocument.Parse(line);
             if (!json.RootElement.TryGetProperty("type", out var typeElement)) return;
             var type = typeElement.GetString();
-            if (type is not ("begin" or "point" or "end" or "undo" or "redo" or "clear")) return;
+            if (type is not ("paper" or "begin" or "point" or "end" or "undo" or "redo" or "clear")) return;
 
-            if (type == "begin" && !_overlaySuppressed)
-            {
-                _overlay ??= new OverlayWindow();
-                if (!_overlay.IsVisible)
-                {
-                    _overlay.Show();
-                    _overlay.PlaceOverVirtualDesktop();
-                    ShowOverlayButton.IsEnabled = false;
-                    HideOverlayButton.IsEnabled = true;
-                }
-            }
+            // Always mirror the tablet's page and ink inside this application.
+            PreviewCanvas.HandleFrame(line);
+
+            // The transparent Windows presentation overlay is intentionally optional.
+            if (type == "begin" && !_overlaySuppressed) EnsureOverlayVisible();
             _overlay?.HandleFrame(line);
         }
         catch (Exception ex)
@@ -154,15 +275,23 @@ public partial class MainWindow : Window
         }
     }
 
+    private void EnsureOverlayVisible()
+    {
+        _overlay ??= new OverlayWindow();
+        if (!_overlay.IsVisible)
+        {
+            _overlay.Show();
+            _overlay.PlaceOverVirtualDesktop();
+            ShowOverlayButton.IsEnabled = false;
+            HideOverlayButton.IsEnabled = true;
+        }
+    }
+
     private void ShowOverlayButton_Click(object sender, RoutedEventArgs e)
     {
         _overlaySuppressed = false;
-        _overlay ??= new OverlayWindow();
-        if (!_overlay.IsVisible) _overlay.Show();
-        _overlay.PlaceOverVirtualDesktop();
-        ShowOverlayButton.IsEnabled = false;
-        HideOverlayButton.IsEnabled = true;
-        Log("Overlay shown. It is click-through; continue using the keyboard and mouse normally.");
+        EnsureOverlayVisible();
+        Log("Desktop presentation overlay enabled. The in-app page preview remains available.");
     }
 
     private void HideOverlayButton_Click(object sender, RoutedEventArgs e)
@@ -171,23 +300,26 @@ public partial class MainWindow : Window
         _overlay?.Hide();
         ShowOverlayButton.IsEnabled = true;
         HideOverlayButton.IsEnabled = false;
-        Log("Overlay hidden. New incoming strokes are retained after you show it again.");
+        Log("Desktop overlay hidden. Tablet writing continues to appear in the in-app preview.");
     }
 
     private void UndoButton_Click(object sender, RoutedEventArgs e)
     {
+        PreviewCanvas.Undo();
         _overlay?.Undo();
         _ = SendCommandToTabletAsync("undo");
     }
 
     private void RedoButton_Click(object sender, RoutedEventArgs e)
     {
+        PreviewCanvas.Redo();
         _overlay?.Redo();
         _ = SendCommandToTabletAsync("redo");
     }
 
     private void ClearButton_Click(object sender, RoutedEventArgs e)
     {
+        PreviewCanvas.ClearInk();
         _overlay?.ClearInk();
         _ = SendCommandToTabletAsync("clear");
     }
@@ -214,7 +346,7 @@ public partial class MainWindow : Window
             return;
         }
         ConnectionBadge.Text = text;
-        ConnectionBadge.Foreground = color;
+        ConnectionDot.Fill = color;
     }
 
     private void Log(string message)
@@ -228,7 +360,7 @@ public partial class MainWindow : Window
         LogBox.ScrollToEnd();
     }
 
-    private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e) => await CheckUpdatesAsync(manual: true);
+    private void CheckUpdatesButton_Click(object sender, RoutedEventArgs e) => _ = CheckUpdatesAsync(manual: true);
 
     private async Task CheckUpdatesAsync(bool manual)
     {
@@ -260,12 +392,11 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _updateTimer.Stop();
-        try { _bluetoothCts?.Cancel(); } catch { }
+        try { _serverCts?.Cancel(); } catch { }
         try { _listener?.Stop(); } catch { }
         try { _client?.Close(); } catch { }
-        try { _listener?.Dispose(); } catch { }
         _overlay?.Close();
-        _bluetoothCts?.Dispose();
+        _serverCts?.Dispose();
         _sendLock.Dispose();
         base.OnClosed(e);
     }
