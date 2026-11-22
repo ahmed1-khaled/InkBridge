@@ -1,81 +1,83 @@
 <Window x:Class="InkBridge.Companion.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="InkBridge Companion" Height="670" Width="790"
-        MinHeight="610" MinWidth="700"
+        Title="InkBridge" Height="520" Width="680"
+        MinHeight="430" MinWidth="540"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBrush}" Foreground="{StaticResource TextBrush}">
-    <Grid Margin="28">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,20">
+        <Grid Grid.Row="0" Margin="0,0,0,18">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="INKBRIDGE" FontSize="25" FontWeight="Bold" />
-                <TextBlock Text="Tablet-to-PC digital writing bridge" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                <TextBlock Text="INKBRIDGE" FontSize="25" FontWeight="Bold"/>
+                <TextBlock Text="Your tablet is the writing pad. This PC is the presentation screen."
+                           Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
             </StackPanel>
             <Border Grid.Column="1" Background="#22334A" CornerRadius="16" Padding="13,8" VerticalAlignment="Center">
-                <TextBlock x:Name="ConnectionBadge" Text="NOT CONNECTED" Foreground="#B6C7DC" FontWeight="SemiBold" FontSize="11" />
+                <TextBlock x:Name="ConnectionBadge" Text="STARTING BLUETOOTH…" Foreground="#B6C7DC" FontWeight="SemiBold" FontSize="11"/>
             </Border>
         </Grid>
 
-        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,14">
-            <StackPanel>
-                <TextBlock Text="BLUETOOTH CLASSIC · SPP" FontSize="11" FontWeight="Bold" Foreground="#75B8FF" />
-                <TextBlock Text="Open the Windows incoming Bluetooth COM port first, then connect to this laptop from the Android app." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" />
-                <Grid Margin="0,13,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="150" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Incoming COM port" VerticalAlignment="Center" />
-                    <ComboBox x:Name="PortCombo" Grid.Column="1" Margin="0,0,10,0" />
-                    <Button x:Name="RefreshButton" Grid.Column="2" Content="Refresh" Click="RefreshButton_Click" />
-                    <Button x:Name="ConnectButton" Grid.Column="3" Content="Open port" Background="{StaticResource AccentBrush}" Click="ConnectButton_Click" Margin="0" />
-                </Grid>
-                <Button Content="Open classic Bluetooth settings" HorizontalAlignment="Left" Margin="0,12,0,0" Padding="10,6" FontSize="11" Click="BluetoothSettingsButton_Click" />
-            </StackPanel>
+        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="BLUETOOTH CONNECTION" FontSize="11" FontWeight="Bold" Foreground="#75B8FF"/>
+                    <TextBlock Text="Pair your tablet with this PC once. InkBridge then waits for the tablet automatically — no COM port setup."
+                               TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,6,12,0"/>
+                </StackPanel>
+                <Button x:Name="StartBluetoothButton" Grid.Column="1" Content="Restart Bluetooth" VerticalAlignment="Center"
+                        Background="{StaticResource AccentBrush}" Click="StartBluetoothButton_Click" Margin="0"/>
+            </Grid>
         </Border>
 
-        <Border Grid.Row="2" Background="{StaticResource PanelBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,14">
+        <Border Grid.Row="2" Background="{StaticResource PanelBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Text="PRESENTATION OVERLAY" FontSize="11" FontWeight="Bold" Foreground="#75B8FF" />
-                <TextBlock Text="The overlay spans the Windows virtual desktop and is click-through, so you can keep using PowerPoint, PDFs, browsers and other apps underneath." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,12" />
+                <TextBlock Text="PRESENTATION OVERLAY" FontSize="11" FontWeight="Bold" Foreground="#75B8FF"/>
+                <TextBlock Text="Open the same PDF, slide deck or browser page on this PC. Your tablet ink appears on top while the overlay stays click-through."
+                           TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,12"/>
                 <WrapPanel>
-                    <Button x:Name="ShowOverlayButton" Content="Show overlay" Background="{StaticResource AccentBrush}" Click="ShowOverlayButton_Click" />
-                    <Button x:Name="HideOverlayButton" Content="Hide overlay" Click="HideOverlayButton_Click" />
-                    <Button Content="Undo" Click="UndoButton_Click" />
-                    <Button Content="Redo" Click="RedoButton_Click" />
-                    <Button Content="Clear ink" Click="ClearButton_Click" Margin="0" />
+                    <Button x:Name="ShowOverlayButton" Content="Show overlay" Background="{StaticResource AccentBrush}" Click="ShowOverlayButton_Click"/>
+                    <Button x:Name="HideOverlayButton" Content="Hide overlay" Click="HideOverlayButton_Click"/>
+                    <Button Content="Undo" Click="UndoButton_Click"/>
+                    <Button Content="Redo" Click="RedoButton_Click"/>
+                    <Button Content="Clear ink" Click="ClearButton_Click" Margin="0"/>
                 </WrapPanel>
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="3" Background="#121D2A" BorderBrush="#26384E" BorderThickness="1" CornerRadius="12" Padding="16">
+        <Border Grid.Row="3" Background="#121D2A" BorderBrush="#26384E" BorderThickness="1" CornerRadius="12" Padding="15">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Text="ACTIVITY" FontSize="11" FontWeight="Bold" Foreground="#75B8FF" Margin="0,0,0,10" />
-                <TextBox x:Name="LogBox" Grid.Row="1" Background="Transparent" Foreground="#C6D2E1" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" />
+                <TextBlock Text="STATUS" FontSize="11" FontWeight="Bold" Foreground="#75B8FF" Margin="0,0,0,10"/>
+                <TextBox x:Name="LogBox" Grid.Row="1" Background="Transparent" Foreground="#C6D2E1"
+                         BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12"/>
             </Grid>
         </Border>
 
-        <DockPanel Grid.Row="4" Margin="2,14,2,0">
-            <TextBlock Text="InkBridge 0.1.0-alpha" Foreground="{StaticResource MutedBrush}" FontSize="11" DockPanel.Dock="Left" />
-            <TextBlock Text="Bluetooth SPP · local only · no cloud" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Right" />
+        <DockPanel Grid.Row="4" Margin="2,12,2,0">
+            <TextBlock Text="InkBridge 0.2 · Bluetooth Classic · GitHub updates"
+                       Foreground="{StaticResource MutedBrush}" FontSize="11" DockPanel.Dock="Left"/>
+            <Button Content="Check for updates" DockPanel.Dock="Right" Padding="10,5" FontSize="11"
+                    Click="CheckUpdatesButton_Click" Margin="0"/>
         </DockPanel>
     </Grid>
 </Window>
