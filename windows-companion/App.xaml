@@ -3,26 +3,47 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="WindowBrush" Color="#101722" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#182333" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#3B91F5" />
-        <SolidColorBrush x:Key="TextBrush" Color="#F4F7FB" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#9AAAC0" />
+        <SolidColorBrush x:Key="WindowBrush" Color="#0B1220" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#121E2D" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#397FE8" />
+        <SolidColorBrush x:Key="TextBrush" Color="#F3F7FD" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#9AAEC7" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#25364B" />
         <Style TargetType="Button">
-            <Setter Property="Foreground" Value="#F4F7FB" />
-            <Setter Property="Background" Value="#2A3A50" />
-            <Setter Property="BorderBrush" Value="#3B4E66" />
+            <Setter Property="Foreground" Value="#F6F9FF" />
+            <Setter Property="Background" Value="#25364D" />
+            <Setter Property="BorderBrush" Value="#354A64" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="14,9" />
             <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Cursor" Value="Hand" />
-        </Style>
-        <Style TargetType="ComboBox">
-            <Setter Property="Padding" Value="8,6" />
             <Setter Property="MinHeight" Value="36" />
-            <Setter Property="Background" Value="#F7F9FC" />
-            <Setter Property="Foreground" Value="#17202C" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.72"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="CaretBrush" Value="#397FE8"/>
         </Style>
     </Application.Resources>
 </Application>
