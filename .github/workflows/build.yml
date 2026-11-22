@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload signed release APK
         if: steps.signing.outputs.enabled == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: InkBridge-Android-APK
           path: android-app/build/outputs/apk/release/*.apk
@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload debug APK
         if: steps.signing.outputs.enabled != 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: InkBridge-Android-APK-debug-only
           path: android-app/build/outputs/apk/debug/*.apk
@@ -120,7 +120,7 @@ jobs:
             --output publish
 
       - name: Upload Windows EXE
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: InkBridge-Windows-x64
           path: publish/InkBridge.Companion.exe
