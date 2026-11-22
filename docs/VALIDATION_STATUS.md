@@ -1,31 +1,27 @@
 # Validation status
 
-Updated 2026-11-22 for commit 02b0c433.
+Updated 2026-11-22 for the Wi-Fi live-canvas development branch.
 
-## GitHub Actions build 33
+## Previous release build 42 (v0.2.42)
 
-- [x] Android debug APK assembled successfully on Ubuntu using JDK 17, Android SDK 35 and Gradle 8.9.
-- [x] Windows self-contained x64 EXE published successfully on windows-latest using .NET 8.
-- [x] Both CI artifacts uploaded:
-  - InkBridge-Android-APK-debug-only
-  - InkBridge-Windows-x64
-- [x] Workflow concluded successfully. The Publish update release job was intentionally skipped because Android signing secrets are not configured yet.
-- [x] AndroidX Core is pinned to 1.15.0 to remain compatible with the current Android Gradle Plugin 8.7.3 and compileSdk 35.
-- [x] Windows updater and the direct Bluetooth RFCOMM listener compile successfully.
-- [x] GitHub Actions workflow YAML, Android manifest/resource XML and WPF XAML/project XML were checked by the successful build.
+- [x] Android signed Release APK built successfully on GitHub Actions.
+- [x] Windows self-contained x64 EXE published successfully using .NET 8.
+- [x] GitHub Release v0.2.42 created with Android APK, Windows EXE and SHA256SUMS.txt.
+- [x] The Android signing secrets were present and the release job completed successfully.
 
-## Not yet hardware-validated
+## Wi-Fi live-canvas implementation in progress
 
-- [ ] Direct Bluetooth RFCOMM connection between the user's Windows Bluetooth adapter and the actual Android phone/tablet.
-- [ ] Pairing permission behavior, reconnect after disconnect, latency and stylus pressure.
-- [ ] Overlay click-through behavior on the user's Windows setup, including multiple monitors and projector.
-- [ ] PDF import, page navigation, rasterized export and share flow on physical Android hardware.
-- [ ] Windows update replacement and Android user-confirmed APK installation after a signed GitHub Release exists.
+- [x] Added Android TCP client with a 6-digit pairing handshake and reconnect synchronization.
+- [x] Added Windows TCP listener on port 45832 with local IPv4 display and a per-user pairing code.
+- [x] Added an embedded WPF live page preview and page-image mirroring for notebook/PDF backgrounds.
+- [x] Made the full-screen tablet mode hide Android status and navigation bars.
+- [x] Made the transparent desktop presentation overlay optional; the in-app preview is always available.
+- [x] Updated connection, protocol and test documentation for Wi-Fi.
+- [ ] New branch still requires GitHub Actions build verification.
+- [ ] Physical Wi-Fi connection, firewall, page mirroring, latency and PDF tests still require the user's actual laptop and tablet.
 
-## Release readiness
+## Important validation boundary
 
-The two binaries are build-verified, but this is still an alpha device-test build. Do not treat a successful CI compile as proof that Bluetooth or the document workflows have been tested on physical devices.
+The Wi-Fi implementation is not hardware-validated until the user connects the two devices on the same reachable Wi-Fi/hotspot and confirms that the Windows preview receives paper and strokes. Guest network client isolation and Windows Firewall can block the connection even when both devices show Wi-Fi connectivity.
 
-To enable future automatic signed Android releases, run scripts/setup-android-signing.ps1 from the updated local clone. Preserve the generated keystore and passwords in a secure backup. Then run the Build and publish InkBridge workflow once on main; subsequent successful pushes to main publish versioned Releases automatically.
-
-The first signed APK may require one uninstall/reinstall because the earlier alpha APK was signed with the CI debug key. Export any important local notes before uninstalling it.
+The earlier v0.2.42 release used Bluetooth RFCOMM; its successful CI build did not prove the Bluetooth link worked on the user's adapter. The new 0.3 transport intentionally changes to local Wi-Fi TCP.
