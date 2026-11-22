@@ -112,7 +112,7 @@ class MainActivity : Activity() {
     private fun buildUi() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(7), dp(5), dp(7), dp(5))
+            setPadding(dp(10), dp(8), dp(10), dp(8))
             setBackgroundColor(Color.rgb(11, 18, 32))
         }
 
@@ -123,7 +123,7 @@ class MainActivity : Activity() {
         val brand = TextView(this).apply {
             text = "INKBRIDGE"
             textSize = 18f
-            letterSpacing = 0.08f
+            letterSpacing = 0.12f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
@@ -137,11 +137,15 @@ class MainActivity : Activity() {
         connectButton = actionButton("Connect Wi-Fi", Color.rgb(54, 117, 232), dp(112)) { onConnectClicked() }
         fullScreenButton = actionButton("Full screen", null, dp(96)) { toggleFullScreen() }
         connectButton.setOnLongClickListener { showWifiConnectDialog(); true }
+        header.background = panelBackground(Color.rgb(18, 30, 45), 17)
+        header.setPadding(dp(12), dp(5), dp(8), dp(5))
         header.addView(brand, LinearLayout.LayoutParams(0, dp(48), 1.0f))
         header.addView(statusText, LinearLayout.LayoutParams(0, dp(48), 1.1f))
         header.addView(connectButton)
         header.addView(fullScreenButton)
-        root.addView(header)
+        root.addView(header, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(58)).apply {
+            bottomMargin = dp(8)
+        })
 
         val documentTools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         documentTools.addView(actionButton("Open PDF", null, dp(94)) { openPdfPicker() })
@@ -162,9 +166,14 @@ class MainActivity : Activity() {
 
         val documentScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
+            background = panelBackground(Color.rgb(18, 30, 45), 15)
+            setPadding(dp(7), dp(5), dp(7), dp(5))
+            clipToPadding = false
             addView(documentTools)
         }
-        root.addView(documentScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
+        root.addView(documentScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply {
+            bottomMargin = dp(7)
+        })
 
         val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         tools.addView(actionButton("Pen", Color.rgb(44, 59, 79), dp(55)) { drawingView.setTool(DrawingView.Tool.PEN) })
@@ -182,25 +191,32 @@ class MainActivity : Activity() {
         })
         val toolsScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
+            background = panelBackground(Color.rgb(18, 30, 45), 15)
+            setPadding(dp(7), dp(5), dp(7), dp(5))
+            clipToPadding = false
             addView(tools)
         }
-        root.addView(toolsScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
+        root.addView(toolsScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply {
+            bottomMargin = dp(7)
+        })
 
         drawingView = DrawingView(this).apply {
             setFrameSink { frame -> client.send(frame) }
             setStylusOnly(false)
             setBrushSizeDp(3.5f)
         }
+        drawingView.background = panelBackground(Color.rgb(24, 35, 51), 18)
+        drawingView.clipToOutline = true
         val canvasParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-        canvasParams.topMargin = dp(4)
-        canvasParams.bottomMargin = dp(3)
+        canvasParams.topMargin = dp(2)
+        canvasParams.bottomMargin = dp(5)
         root.addView(drawingView, canvasParams)
 
         val hint = TextView(this).apply {
             text = "Same Wi-Fi · Connect · Write · Save as PDF"
-            textSize = 10f
+            textSize = 10.5f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(125, 145, 170))
+            setTextColor(Color.rgb(145, 164, 188))
         }
         root.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)))
         setContentView(root)
@@ -577,9 +593,16 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun panelBackground(fill: Int, radiusDp: Int): GradientDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = dp(radiusDp).toFloat()
+        setColor(fill)
+        setStroke(dp(1), Color.rgb(42, 58, 78))
+    }
+
     private fun actionButton(label: String, buttonColor: Int?, width: Int = 0, action: (View) -> Unit): Button = Button(this).apply {
         text = label
-        textSize = 10.5f
+        textSize = 11f
         isAllCaps = false
         setTextColor(Color.WHITE)
         backgroundTintList = null
@@ -591,11 +614,11 @@ class MainActivity : Activity() {
         }
         minWidth = 0
         minimumWidth = 0
-        minimumHeight = dp(38)
+        minimumHeight = dp(40)
         elevation = dp(1).toFloat()
         setPadding(dp(7), 0, dp(7), 0)
         setOnClickListener(action)
-        layoutParams = LinearLayout.LayoutParams(if (width > 0) width else ViewGroup.LayoutParams.WRAP_CONTENT, dp(38)).apply {
+        layoutParams = LinearLayout.LayoutParams(if (width > 0) width else ViewGroup.LayoutParams.WRAP_CONTENT, dp(40)).apply {
             marginEnd = dp(5)
         }
     }
