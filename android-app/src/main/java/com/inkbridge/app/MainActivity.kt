@@ -39,7 +39,7 @@ class MainActivity : Activity() {
     private lateinit var fullScreenButton: Button
     private var isFullScreen = false
 
-        private val openPdfRequest = 4103
+    private val openPdfRequest = 4103
     private val createPdfRequest = 4104
     private var touchInputEnabled = true
     private var renderer: PdfRenderer? = null
@@ -113,7 +113,7 @@ class MainActivity : Activity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(7), dp(5), dp(7), dp(5))
-            setBackgroundColor(Color.rgb(15, 22, 32))
+            setBackgroundColor(Color.rgb(11, 18, 32))
         }
 
         val header = LinearLayout(this).apply {
@@ -128,7 +128,7 @@ class MainActivity : Activity() {
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
         statusText = TextView(this).apply {
-            text = "○ Not connected"
+            text = "○ Wi-Fi not connected"
             textSize = 11f
             maxLines = 1
             setTextColor(Color.rgb(167, 183, 204))
@@ -197,7 +197,7 @@ class MainActivity : Activity() {
         root.addView(drawingView, canvasParams)
 
         val hint = TextView(this).apply {
-            text = "Pair once · Connect · Write · Save as PDF"
+            text = "Same Wi-Fi · Connect · Write · Save as PDF"
             textSize = 10f
             gravity = Gravity.CENTER
             setTextColor(Color.rgb(125, 145, 170))
