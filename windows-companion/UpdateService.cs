@@ -1,3 +1,4 @@
+using System.IO;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Reflection;
@@ -100,12 +101,14 @@ public static class UpdateService
         var script = Path.Combine(appRoot, "apply-update.ps1");
         await File.WriteAllTextAsync(script, UpdateScript, cancellationToken);
         var args = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{script}\" -ProcessId {Environment.ProcessId} -Source \"{ready}\" -Target \"{currentExe}\"";
-        Process.Start(new ProcessStartInfo("powershell.exe", args)
+        var updaterProcess = Process.Start(new ProcessStartInfo("powershell.exe", args)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
             WorkingDirectory = appRoot
-        }) ?? throw new InvalidOperationException("Could not start the InkBridge updater.");
+        });
+        if (updaterProcess is null)
+            throw new InvalidOperationException("Could not start the InkBridge updater.");
 
         // The updater waits for this process to exit, replaces the executable, and starts it again.
     }
