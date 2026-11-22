@@ -107,7 +107,7 @@ class DrawingView(context: Context) : View(context) {
         val bitmap = pageBackground
         if (bitmap != null && !bitmap.isRecycled) {
             val bytes = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 82, bytes)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 76, bytes)
             frame.put("image", Base64.encodeToString(bytes.toByteArray(), Base64.NO_WRAP))
         }
         emit(frame)
