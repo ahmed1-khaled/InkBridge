@@ -21,3 +21,7 @@ publish/
 artifacts/
 *.jks
 *.keystore
+
+# Android signing material - never commit these files
+*.p12
+*.pfx
