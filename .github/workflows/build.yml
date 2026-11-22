@@ -1,0 +1,92 @@
+name: Build InkBridge
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Install Android SDK platform and build tools
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.9'
+      - name: Build debug APK
+        run: gradle --no-daemon :android-app:assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: InkBridge-Android-APK
+          path: android-app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  windows:
+    name: Windows companion EXE
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish self-contained single-file EXE
+        shell: pwsh
+        run: >-
+          dotnet publish windows-companion/InkBridge.Companion.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          --output publish
+      - name: Upload Windows EXE
+        uses: actions/upload-artifact@v6
+        with:
+          name: InkBridge-Windows-x64
+          path: publish/InkBridge.Companion.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish release assets
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v8
+        with:
+          name: InkBridge-Android-APK
+          path: release-assets
+      - name: Download EXE
+        uses: actions/download-artifact@v8
+        with:
+          name: InkBridge-Windows-x64
+          path: release-assets
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true
