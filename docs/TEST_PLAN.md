@@ -1,61 +1,51 @@
-# MVP test plan
+# InkBridge 0.3 device test plan
 
-The following checks are required before relying on InkBridge in a lecture. They have **not** all been run on physical hardware yet.
+GitHub Actions compile success is not proof of physical-device connectivity. Complete these checks on the target Windows laptop and Android tablet before relying on InkBridge for a lecture.
 
 ## Build checks
 
-- [ ] Android debug APK builds on GitHub Actions with JDK 17, Gradle 8.9 and Android SDK 35.
-- [ ] Windows x64 self-contained EXE publishes on a Windows runner.
-- [ ] The APK installs on Android 8.0+ and requests Nearby devices permission on Android 12+.
+- [ ] Android signed Release APK builds on GitHub Actions with JDK 17, Android SDK 35 and Gradle 8.9.
+- [ ] Windows self-contained x64 EXE publishes on a Windows runner.
+- [ ] Windows WPF XAML and the embedded preview compile successfully.
+- [ ] The Android APK installs as an in-place update over v0.2.42 using the same signing key.
 
-## Bluetooth checks
+## Wi-Fi connection checks
 
-- [ ] Pair the tablet and Windows laptop in OS settings.
-- [ ] Create an Incoming SPP COM port in Windows classic Bluetooth settings.
-- [ ] Open the incoming COM port in InkBridge Companion.
-- [ ] Connect from the APK using the secure RFCOMM SPP UUID.
-- [ ] Leave the link active for at least 20 minutes and check for disconnects.
-- [ ] Test reconnect after toggling Bluetooth off/on on each side.
+- [ ] Connect both devices to the same private Wi-Fi network.
+- [ ] Open InkBridge on Windows and confirm it displays an IPv4 address and six-digit code.
+- [ ] Allow the app through Windows Firewall on Private networks if prompted.
+- [ ] Enter the laptop IP and code in Android and confirm the authenticated TCP handshake succeeds.
+- [ ] Confirm the Windows badge changes to TABLET CONNECTED.
+- [ ] Disconnect/reconnect and confirm the page and current ink are synchronized again.
+- [ ] Test with a private mobile hotspot if the router blocks device-to-device traffic.
+- [ ] Test timeout and invalid-code error messages.
 
-## Ink checks
+## Live page mirroring
 
-- [ ] Pen strokes appear on tablet and Windows overlay.
-- [ ] Fast loops and diagonal lines do not show unacceptable gaps.
-- [ ] Stylus pressure changes width where supported by the tablet.
-- [ ] Active pen eraser inversion and app Eraser mode remove strokes.
-- [ ] Stylus-only mode ignores resting fingers; Finger mode accepts touch.
-- [ ] Undo, redo and clear stay synchronized between tablet and PC.
-- [ ] Compare a 16:9 tablet writing area with the actual projector/monitor ratio.
+- [ ] Confirm Blank, Ruled, Grid, Dots and Cornell notebook backgrounds appear in the Windows Live Tablet Canvas panel.
+- [ ] Confirm an imported PDF page appears in the desktop preview.
+- [ ] Confirm pen, marker, color, width and pressure changes appear with acceptable latency.
+- [ ] Confirm fast loops and diagonal lines do not show unacceptable gaps.
+- [ ] Confirm eraser, undo, redo and clear remain synchronized.
+- [ ] Change PDF/notebook pages and confirm the new page replaces the previous desktop preview.
+- [ ] Reconnect after drawing and confirm the current page and visible strokes are replayed.
 
-## Desktop checks
+## Android full-screen and controls
 
-- [ ] Overlay covers all monitors in the virtual desktop.
-- [ ] Normal mouse clicks pass through to the app below.
-- [ ] Keyboard focus stays with PowerPoint/PDF/browser while drawing from tablet.
-- [ ] Overlay hide/show does not lose already drawn marks.
-- [ ] Test with PowerPoint slideshow, a PDF viewer and a browser.
+- [ ] Tap Full screen and confirm Android status/navigation bars disappear.
+- [ ] Swipe from a screen edge to reveal transient system bars, then confirm they hide again.
+- [ ] Exit full screen and confirm normal system bars return.
+- [ ] Test touch and stylus-only input, pen tools and horizontal toolbar scrolling.
 
-## Performance checks
+## Windows presentation tools
 
-Record the following for each tablet/laptop pair:
+- [ ] Confirm pen strokes appear inside the Windows app preview even when the desktop overlay is hidden.
+- [ ] Enable Show desktop overlay and test over PowerPoint, a PDF reader and a browser.
+- [ ] Confirm mouse clicks pass through the overlay.
+- [ ] Hide the overlay and confirm the in-app preview keeps updating.
+- [ ] Test on multiple monitors and a projector.
+- [ ] Test Windows update replacement and Android user-confirmed APK installation.
 
-- tablet and stylus model
-- Android version
-- Windows version and Bluetooth adapter/driver
-- COM port direction and number
-- subjective latency, missed points and reconnect behavior
-- CPU and memory while drawing a dense page
+## Performance
 
-Do not describe this alpha as classroom-ready until the checks above have passed on the actual hardware that will be used in class.
-
-## Overlay visibility regression
-
-- Start streaming ink so the overlay appears automatically.
-- Click **Hide overlay** and keep drawing from the tablet; the overlay must remain hidden.
-- Click **Show overlay**; all strokes written while hidden should appear.
-
-## Cross-device command synchronization
-
-- Send Undo and Redo from the tablet and confirm the Windows overlay follows.
-- Send Undo, Redo and Clear from the desktop and confirm the tablet follows.
-- Repeat while a pen stroke is in progress; both endpoints should finish the active stroke before applying the command.
+Record tablet/stylus model, Android version, Windows version, Wi-Fi adapter/router, subjective latency, missed points and CPU/memory while drawing a dense page. Do not describe the build as classroom-ready until these tests pass on the actual hardware.
