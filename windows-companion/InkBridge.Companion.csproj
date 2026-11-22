@@ -9,8 +9,6 @@
     <AssemblyName>InkBridge.Companion</AssemblyName>
     <RootNamespace>InkBridge.Companion</RootNamespace>
     <Platforms>x64</Platforms>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
   </PropertyGroup>
-  <ItemGroup>
-  </ItemGroup>
 </Project>
