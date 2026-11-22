@@ -19,7 +19,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="INKBRIDGE" FontSize="27" FontWeight="Bold" LetterSpacing="2"/>
+                <TextBlock Text="INKBRIDGE" FontSize="27" FontWeight="Bold"/>
                 <TextBlock Text="A focused writing surface for your tablet and PC"
                            Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0"/>
             </StackPanel>
