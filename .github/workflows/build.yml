@@ -160,7 +160,7 @@ jobs:
           sha256sum InkBridge-Android.apk InkBridge.Companion.exe > SHA256SUMS.txt
 
       - name: Publish this build as the latest GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v0.3.${{ github.run_number }}
           name: InkBridge v0.3.${{ github.run_number }}
