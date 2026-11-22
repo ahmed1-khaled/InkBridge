@@ -13,7 +13,7 @@ namespace InkBridge.Companion;
 public partial class MainWindow : Window
 {
     private const int InkPort = 45832;
-    private const int MaxFrameLength = 4 * 1024 * 1024;
+    private const int MaxFrameLength = 8 * 1024 * 1024;
 
     private TcpListener? _listener;
     private TcpClient? _client;
