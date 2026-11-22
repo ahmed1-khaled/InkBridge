@@ -23,7 +23,7 @@ class WifiTcpClient(
         const val DEFAULT_PORT = 45832
         private const val CONNECT_TIMEOUT_MS = 7000
         private const val HANDSHAKE_TIMEOUT_MS = 7000
-        private const val MAX_FRAME_CHARS = 4 * 1024 * 1024
+        private const val MAX_FRAME_CHARS = 8 * 1024 * 1024
     }
 
     private val io: ExecutorService = Executors.newSingleThreadExecutor()
