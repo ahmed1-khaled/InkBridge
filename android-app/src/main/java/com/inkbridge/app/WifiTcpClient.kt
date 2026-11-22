@@ -47,15 +47,16 @@ class WifiTcpClient(
                     "The connection code must contain 6 digits."
                 }
 
-                candidate = Socket().apply {
+                val connectedSocket = Socket().apply {
                     tcpNoDelay = true
                     keepAlive = true
                     connect(InetSocketAddress(target, DEFAULT_PORT), CONNECT_TIMEOUT_MS)
                     soTimeout = HANDSHAKE_TIMEOUT_MS
                 }
+                candidate = connectedSocket
 
-                val input = BufferedReader(InputStreamReader(candidate.getInputStream(), Charsets.UTF_8))
-                val output = BufferedWriter(OutputStreamWriter(candidate.getOutputStream(), Charsets.UTF_8))
+                val input = BufferedReader(InputStreamReader(connectedSocket.getInputStream(), Charsets.UTF_8))
+                val output = BufferedWriter(OutputStreamWriter(connectedSocket.getOutputStream(), Charsets.UTF_8))
 
                 output.write(JSONObject()
                     .put("type", "hello")
@@ -72,13 +73,12 @@ class WifiTcpClient(
                     throw IOException("Connection code was rejected. Check the 6-digit code shown on the laptop.")
                 }
 
-                candidate.soTimeout = 0
-                socket = candidate
+                connectedSocket.soTimeout = 0
+                socket = connectedSocket
                 writer = output
                 connected = true
-                val active = candidate
                 onState(true, "Connected to laptop over Wi-Fi")
-                startReader(active, input)
+                startReader(connectedSocket, input)
             } catch (error: Exception) {
                 connected = false
                 try { candidate?.close() } catch (_: Exception) { }
