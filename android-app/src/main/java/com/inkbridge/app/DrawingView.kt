@@ -67,6 +67,7 @@ class DrawingView(context: Context) : View(context) {
     /** Replace the paper and reset only the current page's editing history. */
     fun setPaper(bitmap: Bitmap?, aspectRatio: Float) {
         finishCurrentStroke()
+        emit(JSONObject().put("type", "clear"))
         pageBackground = bitmap
         pageAspectRatio = aspectRatio.coerceIn(0.3f, 3.2f)
         clearPage()
