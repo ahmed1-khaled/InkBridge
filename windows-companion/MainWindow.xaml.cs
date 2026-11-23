@@ -1,4 +1,6 @@
 using System.IO;
+using System.Diagnostics;
+using System.ComponentModel;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -28,6 +30,9 @@ public partial class MainWindow : Window
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromMinutes(45) };
     private OverlayWindow? _overlay;
+    private Window? _detachedPreviewWindow;
+    private bool _isShuttingDown;
+    private string? _preferredIpAddress;
     private bool _overlaySuppressed = true;
     private string _pairingCode = "";
     private bool _captureSelectionActive;
@@ -47,6 +52,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         HideOverlayButton.IsEnabled = false;
         Loaded += MainWindow_Loaded;
+        Closing += MainWindow_Closing;
         _updateTimer.Tick += async (_, _) => await CheckUpdatesAsync(manual: false);
         _updateTimer.Start();
     }
@@ -98,9 +104,11 @@ public partial class MainWindow : Window
                 .Take(5)
                 .ToList();
 
+            _preferredIpAddress = addresses.FirstOrDefault()?.Address;
             NetworkAddressText.Text = addresses.Count == 0
                 ? "No network address found. Connect this PC to Wi-Fi or Ethernet, then restart the service."
-                : string.Join(Environment.NewLine, addresses.Select(item => $"{item.Address}   ·   {item.Adapter}"));
+                : string.Join(Environment.NewLine, addresses.Select((item, index) =>
+                    $"{(index == 0 ? "RECOMMENDED  " : "")}{item.Address}   ·   {item.Adapter}"));
         }
         catch (Exception ex)
         {
@@ -168,6 +176,8 @@ public partial class MainWindow : Window
             {
                 incoming = await listener.AcceptTcpClientAsync(token);
                 incoming.NoDelay = true;
+                var remote = incoming.Client.RemoteEndPoint?.ToString() ?? "unknown device";
+                await Dispatcher.InvokeAsync(() => Log($"Incoming device connection from {remote}. Checking session code…"));
                 await HandleIncomingClientAsync(incoming, token);
             }
             catch (OperationCanceledException) { break; }
@@ -198,11 +208,25 @@ public partial class MainWindow : Window
             NewLine = "\n"
         };
 
-        var hello = await reader.ReadLineAsync(token);
+        string? hello;
+        using (var handshakeTimeout = CancellationTokenSource.CreateLinkedTokenSource(token))
+        {
+            handshakeTimeout.CancelAfter(TimeSpan.FromSeconds(8));
+            try
+            {
+                hello = await reader.ReadLineAsync(handshakeTimeout.Token);
+            }
+            catch (OperationCanceledException) when (!token.IsCancellationRequested)
+            {
+                await Dispatcher.InvokeAsync(() => Log($"Connection from {incoming.Client.RemoteEndPoint} timed out before sending the pairing code."));
+                return;
+            }
+        }
+
         if (string.IsNullOrWhiteSpace(hello) || hello.Length > 4096 || !IsValidHandshake(hello))
         {
             await writer.WriteLineAsync("{\"type\":\"denied\"}");
-            await Dispatcher.InvokeAsync(() => Log("Rejected a connection attempt: invalid or missing 6-digit connection code."));
+            await Dispatcher.InvokeAsync(() => Log($"Rejected pairing from {incoming.Client.RemoteEndPoint}: code or protocol mismatch."));
             return;
         }
 
@@ -258,6 +282,7 @@ public partial class MainWindow : Window
             using var document = JsonDocument.Parse(line);
             var root = document.RootElement;
             if (root.GetProperty("type").GetString() != "hello") return false;
+            if (!root.TryGetProperty("protocol", out var protocol) || protocol.GetInt32() != 2) return false;
             var supplied = root.GetProperty("token").GetString() ?? "";
             var expectedBytes = Encoding.UTF8.GetBytes(_pairingCode);
             var suppliedBytes = Encoding.UTF8.GetBytes(supplied);
@@ -290,6 +315,125 @@ public partial class MainWindow : Window
         }
     }
 
+
+    private void PreviewWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_detachedPreviewWindow is { IsVisible: true })
+        {
+            AttachPreviewToMainWindow();
+            return;
+        }
+
+        if (_detachedPreviewWindow is null)
+        {
+            _detachedPreviewWindow = new Window
+            {
+                Title = "InkBridge · Live Tablet Preview",
+                Width = 1180,
+                Height = 860,
+                MinWidth = 640,
+                MinHeight = 460,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.SingleBorderWindow,
+                ResizeMode = ResizeMode.CanResize,
+                ShowInTaskbar = true,
+                Background = new SolidColorBrush(Color.FromRgb(232, 237, 250)),
+                FontFamily = new System.Windows.Media.FontFamily("Segoe UI")
+            };
+            _detachedPreviewWindow.Closing += DetachedPreviewWindow_Closing;
+        }
+
+        PreviewSurfaceHost.Content = null;
+        _detachedPreviewWindow.Content = PreviewSurface;
+        PreviewWindowButton.Content = "↙ Return to app";
+        _detachedPreviewWindow.Show();
+        _detachedPreviewWindow.WindowState = WindowState.Normal;
+        _detachedPreviewWindow.Activate();
+        Log("Live tablet preview opened in its own resizable Windows window.");
+    }
+
+    private void DetachedPreviewWindow_Closing(object? sender, CancelEventArgs e)
+    {
+        if (_isShuttingDown) return;
+        e.Cancel = true;
+        AttachPreviewToMainWindow();
+    }
+
+    private void AttachPreviewToMainWindow()
+    {
+        if (_detachedPreviewWindow is null) return;
+        _detachedPreviewWindow.Content = null;
+        PreviewSurfaceHost.Content = PreviewSurface;
+        _detachedPreviewWindow.Hide();
+        PreviewWindowButton.Content = "↗ Open in window";
+        Log("Live tablet preview returned to the main InkBridge window.");
+    }
+
+    private void MainWindow_Closing(object? sender, CancelEventArgs e)
+    {
+        _isShuttingDown = true;
+        if (_detachedPreviewWindow is not null)
+        {
+            _detachedPreviewWindow.Closing -= DetachedPreviewWindow_Closing;
+            _detachedPreviewWindow.Close();
+            _detachedPreviewWindow = null;
+        }
+    }
+
+    private void CopyAddressButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_preferredIpAddress))
+        {
+            MessageBox.Show(this, "No active Wi-Fi or Ethernet IPv4 address was found.", "Network address",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        Clipboard.SetText(_preferredIpAddress);
+        Log($"Copied recommended laptop IP address: {_preferredIpAddress}");
+    }
+
+    private async void AllowFirewallButton_Click(object sender, RoutedEventArgs e)
+    {
+        var executable = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(executable))
+        {
+            MessageBox.Show(this, "Could not locate the running InkBridge executable.", "Firewall setup",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var safePath = executable.Replace("'", "''");
+        var command = $"Get-NetFirewallRule -DisplayName 'InkBridge TCP 45832' -ErrorAction SilentlyContinue | Remove-NetFirewallRule; " +
+                      $"New-NetFirewallRule -DisplayName 'InkBridge TCP 45832' -Direction Inbound -Program '{safePath}' " +
+                      "-Protocol TCP -LocalPort 45832 -Action Allow -Profile Private | Out-Null";
+        try
+        {
+            var start = new ProcessStartInfo("powershell.exe")
+            {
+                UseShellExecute = true,
+                Verb = "runas"
+            };
+            start.ArgumentList.Add("-NoProfile");
+            start.ArgumentList.Add("-Command");
+            start.ArgumentList.Add(command);
+            using var process = Process.Start(start);
+            if (process is null) throw new InvalidOperationException("Windows did not start the firewall setup process.");
+            await process.WaitForExitAsync();
+            if (process.ExitCode == 0)
+                Log("Windows Firewall rule created for InkBridge TCP 45832 on Private networks.");
+            else
+                Log($"Firewall setup returned exit code {process.ExitCode}. Check Windows PowerShell for details.");
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            Log("Firewall setup was cancelled at the Windows permission prompt.");
+        }
+        catch (Exception ex)
+        {
+            Log($"Could not configure Windows Firewall: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "Firewall setup failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
 
     private void CapturePageButton_Click(object sender, RoutedEventArgs e) => SavePreviewCapture(null);
     private void CopyPageButton_Click(object sender, RoutedEventArgs e)
@@ -545,6 +689,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _isShuttingDown = true;
         _updateTimer.Stop();
         try { _serverCts?.Cancel(); } catch { }
         try { _listener?.Stop(); } catch { }
