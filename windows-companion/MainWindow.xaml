@@ -90,8 +90,9 @@
                                        FontSize="11" Margin="0,4,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Content="▣ Capture page" ToolTip="Save the full tablet page as PNG" Click="CapturePageButton_Click"/>
-                            <Button Content="⌗ Select area" ToolTip="Drag to crop a custom area" Click="SelectCaptureAreaButton_Click" Margin="0"/>
+                            <Button Content="▣ Save PNG" ToolTip="Save the full tablet page as PNG" Click="CapturePageButton_Click"/>
+                            <Button Content="⧉ Copy" ToolTip="Copy the full tablet page to the clipboard" Click="CopyPageButton_Click"/>
+                            <Button Content="⌗ Crop" ToolTip="Drag to crop a custom area" Click="SelectCaptureAreaButton_Click" Margin="0"/>
                         </StackPanel>
                     </Grid>
                     <Border Grid.Row="1" Background="#111A27" BorderBrush="#2B3D54" BorderThickness="1" CornerRadius="13" Padding="12">
