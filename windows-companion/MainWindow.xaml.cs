@@ -416,7 +416,8 @@ public partial class MainWindow : Window
         }
 
         var safePath = executable.Replace("'", "''");
-        var command = $"Get-NetFirewallRule -DisplayName 'InkBridge TCP 45832' -ErrorAction SilentlyContinue | Remove-NetFirewallRule; " +
+        var command = "$ErrorActionPreference = 'Stop'; " +
+                      $"Get-NetFirewallRule -DisplayName 'InkBridge TCP 45832' -ErrorAction SilentlyContinue | Remove-NetFirewallRule; " +
                       $"New-NetFirewallRule -DisplayName 'InkBridge TCP 45832' -Direction Inbound -Program '{safePath}' " +
                       "-Protocol TCP -LocalPort 45832 -Action Allow -Profile Private | Out-Null";
         try
