@@ -343,7 +343,18 @@ public partial class MainWindow : Window
             _detachedPreviewWindow.Closing += DetachedPreviewWindow_Closing;
         }
 
-        PreviewSurfaceHost.Content = null;
+        PreviewSurfaceHost.Content = new TextBlock
+        {
+            Text = "Your live tablet page is open in a separate window.\nClose that window to bring the preview back here.",
+            Foreground = new SolidColorBrush(Color.FromRgb(92, 105, 132)),
+            FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
+            FontSize = 16,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(36)
+        };
         _detachedPreviewWindow.Content = PreviewSurface;
         PreviewWindowButton.Content = "↙ Return to app";
         _detachedPreviewWindow.Show();
