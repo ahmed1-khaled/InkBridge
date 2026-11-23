@@ -27,11 +27,8 @@ export default async function handler(req, res) {
     let sent = 0;
     let failed = 0;
     if (target === "all" || target === "android") {
-      const devices = await db.collection("devices")
-        .where("platform", "==", "android")
-        .where("notificationsEnabled", "==", true)
-        .get();
-      const recipients = devices.docs.filter(doc => typeof doc.data().fcmToken === "string" && doc.data().fcmToken.length > 20);
+      const devices = await db.collection("devices").where("platform", "==", "android").get();
+      const recipients = devices.docs.filter(doc => doc.data().notificationsEnabled === true && typeof doc.data().fcmToken === "string" && doc.data().fcmToken.length > 20);
       for (let offset = 0; offset < recipients.length; offset += 500) {
         const batch = recipients.slice(offset, offset + 500);
         const messages = batch.map(doc => ({
