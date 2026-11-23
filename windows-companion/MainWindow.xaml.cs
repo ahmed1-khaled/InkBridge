@@ -292,6 +292,20 @@ public partial class MainWindow : Window
 
 
     private void CapturePageButton_Click(object sender, RoutedEventArgs e) => SavePreviewCapture(null);
+    private void CopyPageButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            int width=(int)Math.Ceiling(PreviewCanvas.ActualWidth), height=(int)Math.Ceiling(PreviewCanvas.ActualHeight);
+            if(width<2||height<2) throw new InvalidOperationException("The tablet preview is not ready yet.");
+            var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);
+            bitmap.Render(PreviewCanvas);
+            Clipboard.SetImage(bitmap);
+            PreviewStatusText.Text="Page copied to clipboard.";
+            Log("Tablet page copied to the Windows clipboard.");
+        }
+        catch(Exception ex){MessageBox.Show(this,ex.Message,"Copy failed",MessageBoxButton.OK,MessageBoxImage.Warning);}
+    }
     private void SelectCaptureAreaButton_Click(object sender, RoutedEventArgs e)
     {
         _captureSelectionActive = true;
@@ -393,7 +407,7 @@ public partial class MainWindow : Window
             var name=Path.GetFileName(root.GetProperty("name").GetString()??"received-file");
             var size=root.GetProperty("size").GetInt64(); if(size<0||size>100L*1024*1024)throw new InvalidDataException("Incoming file exceeds 100 MB.");
             var folder=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),"InkBridge Transfers");Directory.CreateDirectory(folder);
-            var path=Path.Combine(folder,$"{Path.GetFileNameWithoutExtension(name)}-{DateTime.Now:yyyyMMdd-HHmmss}{Path.GetExtension(name)}");
+            var path=Path.Combine(folder,$"{Path.GetFileNameWithoutExtension(name)}-{DateTime.Now:yyyyMMdd-HHmmssfff}{Path.GetExtension(name)}");
             _incomingFiles[id]=new IncomingFileTransfer{Name=path,ExpectedBytes=size,Stream=File.Create(path)};Log($"Receiving {name}…");return;
         }
         if(!_incomingFiles.TryGetValue(id,out var transfer))return;
@@ -406,7 +420,11 @@ public partial class MainWindow : Window
         if(type=="file_end")
         {
             transfer.Stream.Dispose();_incomingFiles.Remove(id);
-            if(transfer.ReceivedBytes!=transfer.ExpectedBytes)throw new InvalidDataException("Received file size does not match declared size.");
+            if(transfer.ReceivedBytes!=transfer.ExpectedBytes)
+            {
+                try { File.Delete(transfer.Name); } catch { }
+                throw new InvalidDataException("Received file size does not match declared size.");
+            }
             Log($"File received: {transfer.Name}");PreviewStatusText.Text=$"Received {Path.GetFileName(transfer.Name)}";
         }
     }
