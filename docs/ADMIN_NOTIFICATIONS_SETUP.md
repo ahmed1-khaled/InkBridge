@@ -12,7 +12,16 @@ The private /admin console follows patterns from product analytics, device manag
 - Feature controls: remote flags for staged rollout. A flag only affects clients after client-side checks are implemented and released.
 - Audit trail: administrator actions and recent client telemetry.
 - System health: authenticated Firebase Admin and Firestore checks, with Android/Windows delivery readiness called out separately.
+- Website visitors: real page views, anonymous tab sessions, recent activity and approximate online/away state based on a heartbeat.
 - Settings: integration readiness and security guidance.
+
+## Website analytics and privacy
+
+- Page views count actual page loads and refreshes. The counter starts at zero; it is not seeded with a fabricated baseline.
+- A visitor is an anonymous browser-tab session, not a named person or a unique human. The browser generates a random session ID in sessionStorage; the server stores only its SHA-256 hash.
+- The tracker stores the last page path, first/last seen timestamps and page-view count. It does not store visitor IP addresses, names, email addresses, full referrers or browser fingerprints.
+- A session is labelled online after a heartbeat in the last 90 seconds. The site sends a heartbeat every 30 seconds while the tab is visible. Away means no recent heartbeat, not proof that the browser is closed.
+- Configure a Firestore TTL policy for siteSessions.expiresAt (30 days) to remove old session records. Aggregate counts in siteStats/global are lifetime totals and remain separate.
 
 ## Metric definitions
 
@@ -28,13 +37,21 @@ Empty charts mean client telemetry has not been instrumented or no events have a
 
 ## Vercel environment
 
+Before deployment, set the Vercel project's Root Directory to website. The project serves public assets from website/public (configured as outputDirectory) and builds the single catch-all API function from website/api/index.js. Keep the website/_api and website/lib directories outside the public output.
+
+Use a Node.js 22-or-newer runtime for firebase-admin 14.5.1. The package manifest and lockfile pin this dependency and the minimum runtime.
+
 Configure Production (and Preview, if needed) environment variables:
 
 - FIREBASE_SERVICE_ACCOUNT_JSON: private Firebase service-account JSON, stored as an encrypted/sensitive variable.
 - FIREBASE_WEB_CONFIG: Firebase Web App config JSON (public client config, not a service-account key).
 - ADMIN_EMAILS: comma-separated verified Google email addresses allowed into the console.
 
-No Firebase project or Vercel environment variables are currently provisioned by this repository. Create a dedicated Firebase project, enable Google Authentication, Firestore and Firebase Cloud Messaging, then configure these values before login or delivery works.
+The API is consolidated into one catch-all Vercel function under website/api/index.js; the original handlers live under website/_api and website/vercel.json rewrites /api/* to this router. This keeps the project within the Hobby plan 12-function deployment limit.
+
+No Firebase project or Vercel environment variables are provisioned by this repository. Create a dedicated Firebase project, register inkbridge-tool.vercel.app under Firebase Authentication > Settings > Authorized domains, enable Google Authentication, Firestore and Firebase Cloud Messaging, then configure these values before login or delivery works.
+
+After creating Firestore, enable a 30-day TTL policy on the siteSessions collection's expiresAt field. The tracker creates siteSessions and siteStats/global automatically on first use.
 
 ## Firestore security
 
