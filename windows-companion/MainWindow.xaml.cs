@@ -366,6 +366,8 @@ public partial class MainWindow : Window
         PreviewSurfaceHost.Content = PreviewSurface;
         _detachedPreviewWindow.Hide();
         PreviewWindowButton.Content = "↗ Open in window";
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Activate();
         Log("Live tablet preview returned to the main InkBridge window.");
     }
 
