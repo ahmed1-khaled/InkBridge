@@ -58,7 +58,9 @@
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <Button x:Name="RestartServerButton" Content="Restart Wi-Fi service"
                             Background="{StaticResource AccentBrush}" Click="RestartServerButton_Click"/>
-                    <TextBlock Text="Allow InkBridge on Private networks if Windows Firewall asks."
+                    <Button Content="Allow through Firewall" Click="AllowFirewallButton_Click" Margin="0,8,0,0"/>
+                    <Button Content="Copy preferred IP" Click="CopyAddressButton_Click" Margin="0,8,0,0"/>
+                    <TextBlock Text="Private network access is limited to this app and TCP port 45832."
                                Width="210" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
                                FontSize="10" Margin="0,10,0,0"/>
                 </StackPanel>
@@ -90,22 +92,25 @@
                                        FontSize="11" Margin="0,4,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="PreviewWindowButton" Content="↗ Open in window" ToolTip="Detach the live tablet preview into its own resizable window" Click="PreviewWindowButton_Click"/>
                             <Button Content="▣ Save PNG" ToolTip="Save the full tablet page as PNG" Click="CapturePageButton_Click"/>
                             <Button Content="⧉ Copy" ToolTip="Copy the full tablet page to the clipboard" Click="CopyPageButton_Click"/>
                             <Button Content="⌗ Crop" ToolTip="Drag to crop a custom area" Click="SelectCaptureAreaButton_Click" Margin="0"/>
                         </StackPanel>
                     </Grid>
-                    <Border Grid.Row="1" Background="#111A27" BorderBrush="#2B3D54" BorderThickness="1" CornerRadius="13" Padding="12">
-                        <Grid>
-                            <local:InkCanvasView x:Name="PreviewCanvas"/>
-                            <Canvas x:Name="CaptureSelectionLayer" Background="Transparent"
-                                    MouseLeftButtonDown="CaptureSelectionLayer_MouseLeftButtonDown"
-                                    MouseMove="CaptureSelectionLayer_MouseMove"
-                                    MouseLeftButtonUp="CaptureSelectionLayer_MouseLeftButtonUp">
-                                <Rectangle x:Name="CaptureSelectionRect" Visibility="Collapsed" Stroke="#83D2C6"
-                                           StrokeThickness="2" Fill="#3383D2C6" StrokeDashArray="4,3"/>
-                            </Canvas>
-                        </Grid>
+                    <Border Grid.Row="1" Background="#E8EDFA" BorderBrush="#D4DDF2" BorderThickness="1" CornerRadius="13" Padding="12">
+                        <ContentControl x:Name="PreviewSurfaceHost">
+                            <Grid x:Name="PreviewSurface">
+                                <local:InkCanvasView x:Name="PreviewCanvas"/>
+                                <Canvas x:Name="CaptureSelectionLayer" Background="Transparent"
+                                        MouseLeftButtonDown="CaptureSelectionLayer_MouseLeftButtonDown"
+                                        MouseMove="CaptureSelectionLayer_MouseMove"
+                                        MouseLeftButtonUp="CaptureSelectionLayer_MouseLeftButtonUp">
+                                    <Rectangle x:Name="CaptureSelectionRect" Visibility="Collapsed" Stroke="#3658F5"
+                                               StrokeThickness="2" Fill="#333658F5" StrokeDashArray="4,3"/>
+                                </Canvas>
+                            </Grid>
+                        </ContentControl>
                     </Border>
                     <TextBlock Grid.Row="2" Text="Your paper, PDF page and pen strokes appear here in real time. No full-screen mirror required."
                                Foreground="{StaticResource MutedBrush}" FontSize="10" Margin="3,11,3,0"
