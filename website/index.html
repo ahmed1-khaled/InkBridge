@@ -296,6 +296,126 @@ h1{font-size:clamp(46px,5.6vw,70px);line-height:1.06;letter-spacing:-.07em;margi
 @media(max-width:390px){.hero-actions{align-items:stretch}.hero-actions .button{flex:1;padding-inline:9px;font-size:9px}.hero-meta{gap:8px 11px}.hero-visual{height:250px}.desktop-device{height:205px}.tablet-device{width:88px;height:146px}.feature-grid{grid-template-columns:1fr}.feature-card{min-height:0;padding:16px 7px}.preview-grid{grid-template-columns:94px minmax(0,1fr)}.preview-side{grid-template-columns:1fr}.download-cards{grid-template-columns:1fr}.download-card{padding:15px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.reveal{opacity:1!important;transform:none!important}}
 
+  
+/* Vivid, high-contrast visual layer */
+:root{
+ --bg:#f7f8fc;--bg-2:#edf1ff;--panel:#fff;--panel-2:#f4f6ff;
+ --line:rgba(24,42,89,.13);--text:#111b38;--muted:#52617f;
+ --blue:#3658f5;--blue-2:#2444d8;--cyan:#00b8d4;--mint:#b5f3df;
+ --max:1240px;--radius:20px;--shadow:0 28px 90px rgba(34,58,145,.16);
+}
+html{scroll-behavior:smooth;scroll-padding-top:88px}
+body{background:var(--bg);color:var(--text);cursor:auto}
+::selection{background:#b7c8ff;color:#10204f}
+a,button{cursor:pointer}
+.accent{background:linear-gradient(105deg,#3155f4 4%,#00a9c9 52%,#13a982 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eyebrow{color:#3154ce;font-weight:800}
+.eyebrow:before{height:3px;width:26px;background:linear-gradient(90deg,#00b8d4,#3658f5)}
+.top-progress{height:3px;background:linear-gradient(90deg,#00c3d7,#3658f5,#ff765d);box-shadow:0 0 12px rgba(54,88,245,.3)}
+.nav-shell{padding:12px 0}
+.nav-shell.scrolled{background:rgba(247,248,252,.88);border-bottom:1px solid rgba(45,68,155,.14);box-shadow:0 8px 30px rgba(31,52,121,.08);backdrop-filter:blur(18px)}
+.brand{color:#111b38}.brand-mark{background:linear-gradient(145deg,#3658f5,#00b8d4);border:0;box-shadow:0 8px 20px rgba(54,88,245,.25);color:#fff}
+.brand-word span{color:#3658f5}
+.nav-links{color:#52617f}.nav-links a:hover{color:#3658f5}
+.lang-switch,.menu-toggle{color:#172448;border-color:rgba(40,62,143,.22);background:#fff}
+.lang-switch:hover,.menu-toggle:hover{background:#eaf0ff;border-color:#8ca1ff}
+.nav-download{box-shadow:0 8px 20px rgba(54,88,245,.17)}
+.button{border-radius:11px;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s,border-color .22s,background .22s;will-change:transform}
+.button.primary{background:linear-gradient(110deg,#3658f5,#2477e8 55%,#00a9c7);color:#fff;box-shadow:0 12px 26px rgba(54,88,245,.24)}
+.button.primary:hover{box-shadow:0 18px 34px rgba(54,88,245,.34)}
+.button.secondary{background:#fff;border-color:#cbd5fa;color:#25345f}
+.button.secondary:hover{background:#edf2ff;border-color:#8ea4ff;color:#2444d8}
+.hero{min-height:780px;background:radial-gradient(ellipse at 78% 22%,rgba(0,184,212,.13),transparent 32%),radial-gradient(ellipse at 12% 75%,rgba(255,111,91,.1),transparent 27%),#f7f8fc}
+.hero:before{background:radial-gradient(ellipse,rgba(54,88,245,.2),transparent 68%);filter:blur(22px)}
+.hero:after{background:radial-gradient(ellipse,rgba(0,184,212,.15),transparent 68%)}
+.hero-grid{opacity:.33;background-image:linear-gradient(rgba(55,84,190,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(55,84,190,.09) 1px,transparent 1px)}
+.release-pill{background:#e9efff;border:1px solid #cbd6ff;color:#2b47b6;box-shadow:0 8px 24px rgba(54,88,245,.08)}
+.release-dot{background:#00ad86;box-shadow:0 0 0 5px rgba(0,173,134,.13),0 0 16px rgba(0,173,134,.45)}
+h1{color:#111b38;text-shadow:0 5px 26px rgba(54,88,245,.06)}
+.hero-lead{color:#53617d}
+.hero-meta{color:#586887}.hero-meta svg{color:#00a88e}
+.hero-visual{filter:drop-shadow(0 20px 30px rgba(48,68,139,.13))}
+.visual-glow{background:radial-gradient(ellipse,rgba(0,184,212,.23),rgba(54,88,245,.12) 45%,transparent 70%);filter:blur(25px)}
+.desktop-device{border-color:#7c8fba;background:linear-gradient(145deg,#e9efff,#9baed1 36%,#26365c);box-shadow:0 40px 70px rgba(31,48,106,.26),inset 0 1px rgba(255,255,255,.9)}
+.desktop-device:after{background:linear-gradient(#b8c7e7,#6477a7 45%,#26365c);border-color:#879ac2}
+.screen{background:#111c34}.screen-top{background:#1c2b4c;color:#edf4ff}.screen-sidebar{background:#1b2a49}.side-label{color:#79d9ef}.side-row.active{background:rgba(54,88,245,.3);border-color:rgba(130,159,255,.45)}
+.screen-canvas{background:#101a30}.paper{box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.float-status{background:rgba(20,35,70,.94);border-color:rgba(123,164,255,.45);box-shadow:0 20px 50px rgba(35,62,155,.24)}
+.float-status strong{color:#fff}.float-status span{color:#72efd0}
+.tablet-device{border-color:#7d91c1;background:#101b34;box-shadow:0 26px 42px rgba(31,48,106,.34)}
+.tablet-notch{background:#52648e}
+.spark{border-color:rgba(0,184,212,.6);box-shadow:0 0 22px rgba(0,184,212,.65)}
+.stylus{background:linear-gradient(90deg,#3658f5,#e5f4ff 45%,#00b8d4);box-shadow:0 12px 22px rgba(54,88,245,.24)}
+.scroll-cue{color:#5267a3;font-weight:800;animation:cuePulse 2s ease-in-out infinite}
+.scroll-cue:before{background:linear-gradient(90deg,#00b8d4,#3658f5)}
+.trust-strip{background:#eaf0ff;border-color:#d8e0ff}
+.trust-inner{color:#35466f}.trust-item svg{color:#00a88e}
+.section{padding:112px 0}
+.section-heading h2{color:#111b38}
+.section-lead{color:#53617d}
+.preview-section,.flow-section,#faq{background:linear-gradient(180deg,#edf2ff,#f7f8fc)}
+.preview-frame{background:linear-gradient(135deg,#dce6ff,#c8f4f1);border-color:#b5c8ff;box-shadow:0 30px 80px rgba(49,76,171,.16)}
+.preview-inner{background:#152342;box-shadow:0 12px 35px rgba(24,42,89,.22)}
+.preview-main{background:#1a2b50}.preview-info,.side-card{background:#20345d;border-color:rgba(175,200,255,.2)}
+.preview-info b,.side-card h3{color:#7ce4e5}.preview-info p{color:#c0d0ef}.tool-chip{background:#344b7a;color:#eef4ff}
+.preview-screen-status,.status-line i{color:#73efd0}.preview-page-wrap{background:#101b34}
+#features{background:#f7f8fc}
+.feature-grid{gap:16px}
+.feature-card{background:linear-gradient(145deg,#fff,#f0f4ff);border:1px solid #dce4ff;border-radius:17px;box-shadow:0 8px 24px rgba(38,62,143,.055);min-height:210px;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s}
+.feature-card:before{background:radial-gradient(circle,rgba(0,184,212,.22),rgba(54,88,245,.1) 48%,transparent 72%)}
+.feature-card:hover{transform:translateY(-9px) scale(1.012);border-color:#91a8ff;box-shadow:0 22px 45px rgba(49,76,171,.15);background:linear-gradient(145deg,#fff,#eaf0ff)}
+.feature-icon{background:linear-gradient(145deg,#3658f5,#00b8d4);border:0;color:#fff;box-shadow:0 9px 18px rgba(54,88,245,.2)}
+.feature-card h3{color:#18264d}.feature-card p{color:#596987}
+.flow-section{background:linear-gradient(135deg,#e9efff,#f2fbfc)}
+.steps:before{background:linear-gradient(90deg,transparent,#8ba5ff,#00b8d4,transparent)}
+.step-num{background:linear-gradient(145deg,#3658f5,#00a9c7);border:0;color:white;box-shadow:0 0 0 8px #edf2ff,0 12px 24px rgba(54,88,245,.22)}
+.step h3{color:#18264d}.step p{color:#596987}
+.note-panel{background:#e3fbf6;border-color:#a7e8db;color:#245b58}.note-panel svg{color:#009b85}
+.download-section{background:radial-gradient(ellipse at 85% 0%,rgba(0,184,212,.18),transparent 40%),radial-gradient(ellipse at 0% 100%,rgba(255,111,91,.18),transparent 36%),#eaf0ff}
+.download-panel{background:linear-gradient(120deg,#172d65,#244fbd 60%,#087e9e);border-color:rgba(255,255,255,.3);box-shadow:0 32px 80px rgba(37,68,170,.26)}
+.download-panel:before{background:radial-gradient(circle,rgba(0,220,213,.25),transparent 68%)}
+.download-copy h2{color:#fff}.download-copy p{color:#d6e4ff}.download-panel .eyebrow{color:#8df2e2}
+.download-card{background:rgba(7,20,58,.35);border-color:rgba(210,226,255,.27);backdrop-filter:blur(10px)}
+.download-card:hover{background:rgba(7,20,58,.52);border-color:#8ceee5;box-shadow:0 14px 30px rgba(0,0,0,.16)}
+.platform-icon{background:linear-gradient(145deg,#00b8d4,#3658f5);color:#fff}
+.download-platform strong{color:#fff}.download-platform small,.download-foot{color:#d0e0ff}
+.faq-list{border-color:#d5def8}
+details{border-color:#d5def8}
+summary{color:#18264d}
+summary:after{color:#3658f5;border-color:#c7d3ff;background:#fff}
+.faq-answer{color:#53617d}
+.developer{background:#f7f8fc}
+.developer-card{border-color:#d5def8}
+.dev-avatar{background:linear-gradient(145deg,#3658f5,#00b8d4);color:#fff;border:0;box-shadow:0 10px 22px rgba(54,88,245,.2)}
+.dev-meta strong{color:#18264d}.dev-meta small{color:#63718f}
+.social-link{background:#fff;border-color:#d1dcff;color:#34466f}
+.social-link:hover{background:#eaf0ff;border-color:#8fa5ff;color:#2444d8}
+.social-link svg{color:#3658f5}
+footer{background:#14234c;border-color:#263e79;color:#d3e0ff}
+.footer-links a:hover{color:#76f0e3}
+.reveal{opacity:0;transform:translateY(28px) scale(.985);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.visible{opacity:1;transform:translateY(0) scale(1)}
+.delay-1{transition-delay:.12s}.delay-2{transition-delay:.22s}
+@keyframes cuePulse{0%,100%{opacity:.62;transform:translateY(0)}50%{opacity:1;transform:translateY(4px)}}
+@media(hover:hover) and (pointer:fine){
+ body.has-pointer{cursor:none}
+ body.has-pointer a,body.has-pointer button{cursor:none}
+ .pointer-core{position:fixed;z-index:2000;left:0;top:0;width:7px;height:7px;border-radius:50%;background:#3155f4;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(49,85,244,.13);opacity:0;transition:opacity .2s,scale .2s}
+ .pointer-aura{position:fixed;z-index:1999;left:0;top:0;width:38px;height:38px;border:1px solid rgba(0,174,205,.45);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(0,184,212,.12),rgba(54,88,245,.035) 55%,transparent 70%);opacity:0;transition:width .25s,height .25s,border-color .25s,opacity .2s}
+ body.has-pointer.pointer-ready .pointer-core,body.has-pointer.pointer-ready .pointer-aura{opacity:1}
+ body.has-pointer.pointer-hover .pointer-aura{width:62px;height:62px;border-color:rgba(255,111,91,.8);background:radial-gradient(circle,rgba(255,111,91,.13),rgba(0,184,212,.04) 60%,transparent 72%)}
+}
+@media(max-width:700px){
+ .hero{background:radial-gradient(ellipse at 85% 25%,rgba(0,184,212,.12),transparent 40%),#f7f8fc}
+ .nav-links{background:#f7f8fc;border-color:#d7e0ff;box-shadow:0 14px 35px rgba(34,58,145,.14)}
+ .feature-card{min-height:170px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+ .reveal{opacity:1!important;transform:none!important}
+ .pointer-core,.pointer-aura{display:none!important}
+}
+
   </style>
 </head>
 <body dir="ltr">
@@ -627,6 +747,64 @@ h1{font-size:clamp(46px,5.6vw,70px);line-height:1.06;letter-spacing:-.07em;margi
           (lang === "ar" ? "الإصدار الأحدث " : "Latest release ") + tag.replace(/^v/,"");
       })
       .catch(() => {});
+  
+    // Pointer feedback, magnetic CTAs, and subtle product parallax.
+    (() => {
+      const finePointer = window.matchMedia("(hover:hover) and (pointer:fine)").matches;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (finePointer && !reduceMotion) {
+        const core = document.createElement("div");
+        const aura = document.createElement("div");
+        core.className = "pointer-core";
+        aura.className = "pointer-aura";
+        document.body.append(core, aura);
+        document.body.classList.add("has-pointer");
+        let x = innerWidth/2, y = innerHeight/2, ax=x, ay=y, raf=0;
+        const draw = () => {
+          ax += (x-ax)*.22; ay += (y-ay)*.22;
+          core.style.transform = \`translate3d(\${x}px,\${y}px,0) translate(-50%,-50%)\`;
+          aura.style.transform = \`translate3d(\${ax}px,\${ay}px,0) translate(-50%,-50%)\`;
+          raf = requestAnimationFrame(draw);
+        };
+        window.addEventListener("pointermove", e => {
+          x=e.clientX; y=e.clientY;
+          if (!raf) draw();
+          document.body.classList.add("pointer-ready");
+        }, {passive:true});
+        document.addEventListener("pointerover", e => {
+          if (e.target.closest("a,button,.feature-card,.download-card")) document.body.classList.add("pointer-hover");
+          else document.body.classList.remove("pointer-hover");
+        }, {passive:true});
+        document.addEventListener("pointerleave", () => document.body.classList.remove("pointer-ready"));
+        document.addEventListener("pointerenter", () => document.body.classList.add("pointer-ready"));
+        document.querySelectorAll(".button.primary,.nav-download").forEach(el => {
+          el.addEventListener("pointermove", e => {
+            const r=el.getBoundingClientRect(), dx=(e.clientX-r.left-r.width/2)/r.width, dy=(e.clientY-r.top-r.height/2)/r.height;
+            el.style.transform=\`translate(\${dx*5}px,\${dy*4}px) translateY(-2px)\`;
+          });
+          el.addEventListener("pointerleave", () => el.style.transform="");
+        });
+        const hero = document.querySelector(".hero-visual");
+        if (hero) hero.addEventListener("pointermove", e => {
+          const r=hero.getBoundingClientRect(), px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
+          hero.style.setProperty("--mx", px.toFixed(3));
+          hero.style.setProperty("--my", py.toFixed(3));
+          const device=hero.querySelector(".desktop-device"), tablet=hero.querySelector(".tablet-device");
+          if(device) device.style.transform=\`translateX(calc(-50% + \${px*9}px)) rotateY(\${px*2.5}deg) rotateX(\${-py*2}deg)\`;
+          if(tablet) tablet.style.marginRight=\`\${px*-7}px\`;
+        }, {passive:true});
+        if(hero) hero.addEventListener("pointerleave", () => {
+          const device=hero.querySelector(".desktop-device"), tablet=hero.querySelector(".tablet-device");
+          if(device) device.style.transform="";
+          if(tablet) tablet.style.marginRight="";
+        });
+      }
+      // Stagger each visible card group without delaying the first viewport.
+      document.querySelectorAll(".feature-grid .feature-card,.steps .step,.download-cards .download-card").forEach((el,i) => {
+        el.style.transitionDelay = \`\${(i%3)*75}ms\`;
+      });
+    })();
+
   </script>
 </body>
 </html>
