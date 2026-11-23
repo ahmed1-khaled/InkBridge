@@ -62,3 +62,16 @@ A single active stroke is allowed. begin implicitly finishes an unfinished strok
 - Both devices must share a reachable local Wi-Fi network or hotspot. Guest network isolation and some managed campus networks may block local traffic.
 - After reconnecting, Android re-sends the current page and visible strokes so the Windows preview is synchronized.
 - Internet is not required for drawing; it is used only for app update checks/downloads.
+
+
+## Local file transfer
+
+The authenticated connection also supports chunked file transfer in either direction:
+
+- `file_start`: declares transfer ID, name, MIME type, byte size and chunk count.
+- `file_chunk`: carries a Base64-encoded chunk with a zero-based index.
+- `file_end`: closes the transfer after all bytes arrive.
+- Current application limit: 100 MB per file; chunks are 256 KiB to keep JSON frames small.
+- Windows saves received files in the user's **Documents/InkBridge Transfers** folder.
+- Android saves received files in **Downloads/InkBridge** on Android 10+, or app-specific Downloads on older Android versions.
+- Transfers are accepted only over the already authenticated local TCP session. They are not uploaded to a cloud service.
