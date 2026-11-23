@@ -63,3 +63,19 @@ Record tablet/stylus model, Android version, Windows version, Wi-Fi adapter/rout
 - [ ] Send a small image Android → Windows and Windows → Android; verify the files open correctly.
 - [ ] Test a larger file, a zero-byte file, and a transfer interrupted by disconnect; confirm partial files are not mistaken for completed files.
 - [ ] Verify Windows receives files in Documents/InkBridge Transfers and Android 10+ receives files in Downloads/InkBridge.
+
+
+## Detached preview and network diagnostics
+
+- [ ] Open the live preview in its own Windows window; confirm the main app remains open and the page keeps updating.
+- [ ] Minimize and maximize/restore the detached preview using the native title-bar buttons.
+- [ ] Minimize the main app while the detached preview remains visible and continues updating.
+- [ ] Close the detached preview with X; confirm the same live surface returns to the main app without losing strokes or page background.
+- [ ] Close the main app while the preview is detached; confirm both windows and the listener shut down cleanly.
+- [ ] Use Copy preferred IP and verify it copies the Wi-Fi adapter IPv4 address rather than a VPN/loopback address.
+- [ ] Run Allow through Firewall and approve the UAC prompt; verify the rule is scoped to InkBridge, TCP 45832 and Private profile.
+- [ ] Pair using ASCII digits, Arabic-Indic digits (٠١٢٣٤٥٦), and Persian digits (۰۱۲۳۴۵۶); all valid forms should normalize and connect.
+- [ ] Enter an incorrect code; confirm Android receives a pairing rejection and Windows logs a code/protocol mismatch.
+- [ ] Attempt a connection without sending a handshake; confirm Windows times out after eight seconds and accepts the next device.
+- [ ] Test with both devices on a private Wi-Fi network and a personal hotspot; confirm guest/client-isolated Wi-Fi is reported as a network limitation.
+- [ ] Confirm the tablet and Windows UI use the shared high-contrast blue/white palette and that drawing paper remains white.
