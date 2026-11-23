@@ -49,3 +49,17 @@ GitHub Actions compile success is not proof of physical-device connectivity. Com
 ## Performance
 
 Record tablet/stylus model, Android version, Windows version, Wi-Fi adapter/router, subjective latency, missed points and CPU/memory while drawing a dense page. Do not describe the build as classroom-ready until these tests pass on the actual hardware.
+
+
+## New workspace and transfer checks
+
+- [ ] Restart Windows Companion and confirm the six-digit session code changes.
+- [ ] Use the refresh-code control while disconnected and confirm the previous code is rejected.
+- [ ] Connect Android using the current code; reconnect after a drop without restarting Windows.
+- [ ] Capture the full tablet page to PNG and verify the paper background and strokes are both present.
+- [ ] Select a custom crop from the Windows preview and verify the exported image dimensions.
+- [ ] Copy the full page from the Windows preview and paste it into Paint or another image editor.
+- [ ] Move the Android tool dock left and right; hide and restore the tool list without losing the canvas.
+- [ ] Send a small image Android → Windows and Windows → Android; verify the files open correctly.
+- [ ] Test a larger file, a zero-byte file, and a transfer interrupted by disconnect; confirm partial files are not mistaken for completed files.
+- [ ] Verify Windows receives files in Documents/InkBridge Transfers and Android 10+ receives files in Downloads/InkBridge.

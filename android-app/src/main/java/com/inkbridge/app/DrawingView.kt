@@ -44,7 +44,7 @@ class DrawingView(context: Context) : View(context) {
 
     private val paperPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(220, 226, 234)
+        color = Color.rgb(77, 84, 84)
         style = Paint.Style.STROKE
         strokeWidth = dp(1f)
     }
@@ -145,7 +145,7 @@ class DrawingView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawColor(Color.rgb(29, 39, 53))
+        canvas.drawColor(Color.rgb(34, 38, 39))
         if (pageBackground != null) {
             canvas.drawBitmap(pageBackground!!, null, content, backgroundPaint)
         } else {

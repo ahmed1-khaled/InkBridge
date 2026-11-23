@@ -2,6 +2,7 @@ package com.inkbridge.app
 
 import android.app.Activity
 import android.content.Intent
+import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -16,6 +17,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.os.Environment
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.view.Gravity
 import android.graphics.drawable.GradientDrawable
 import androidx.core.view.WindowCompat
@@ -26,6 +30,7 @@ import android.view.ViewGroup
 import android.widget.*
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,6 +43,15 @@ class MainActivity : Activity() {
     private lateinit var client: WifiTcpClient
     private lateinit var fullScreenButton: Button
     private var isFullScreen = false
+    private lateinit var toolsRail: LinearLayout
+    private lateinit var toolsScroll: ScrollView
+    private lateinit var workspace: LinearLayout
+    private lateinit var toolsSideButton: Button
+    private lateinit var toolsToggleButton: Button
+    private var toolsOnLeft = false
+    private val sendFileRequest = 4105
+    private data class IncomingTransfer(val name: String, val mime: String, val expectedBytes: Long, val file: File, var receivedBytes: Long = 0)
+    private val incomingTransfers = mutableMapOf<String, IncomingTransfer>()
 
     private val openPdfRequest = 4103
     private val createPdfRequest = 4104
@@ -62,8 +76,8 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(11, 18, 32)
-        window.navigationBarColor = Color.rgb(11, 18, 32)
+        window.statusBarColor = Color.rgb(29, 31, 32)
+        window.navigationBarColor = Color.rgb(29, 31, 32)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         client = WifiTcpClient(
@@ -86,7 +100,7 @@ class MainActivity : Activity() {
                     }
                 }
             },
-            onCommand = { frame -> runOnUiThread { if (::drawingView.isInitialized) drawingView.applyRemoteCommand(frame) } }
+            onCommand = { frame -> runOnUiThread { handleIncomingFrame(frame) } }
         )
 
         buildUi()
@@ -113,7 +127,7 @@ class MainActivity : Activity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(10), dp(8), dp(10), dp(8))
-            setBackgroundColor(Color.rgb(11, 18, 32))
+            setBackgroundColor(Color.rgb(29, 31, 32))
         }
 
         val header = LinearLayout(this).apply {
@@ -131,13 +145,13 @@ class MainActivity : Activity() {
             text = "○ Wi-Fi not connected"
             textSize = 11f
             maxLines = 1
-            setTextColor(Color.rgb(167, 183, 204))
+            setTextColor(Color.rgb(177, 187, 185))
             gravity = Gravity.CENTER_VERTICAL
         }
-        connectButton = actionButton("Connect Wi-Fi", Color.rgb(54, 117, 232), dp(112)) { onConnectClicked() }
+        connectButton = actionButton("Connect Wi-Fi", Color.rgb(75, 151, 140), dp(112)) { onConnectClicked() }
         fullScreenButton = actionButton("Full screen", null, dp(96)) { toggleFullScreen() }
         connectButton.setOnLongClickListener { showWifiConnectDialog(); true }
-        header.background = panelBackground(Color.rgb(18, 30, 45), 17)
+        header.background = panelBackground(Color.rgb(39, 43, 44), 17)
         header.setPadding(dp(12), dp(5), dp(8), dp(5))
         header.addView(brand, LinearLayout.LayoutParams(0, dp(48), 1.0f))
         header.addView(statusText, LinearLayout.LayoutParams(0, dp(48), 1.1f))
@@ -148,25 +162,26 @@ class MainActivity : Activity() {
         })
 
         val documentTools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        documentTools.addView(actionButton("Open PDF", null, dp(94)) { openPdfPicker() })
-        documentTools.addView(actionButton("New notebook", null, dp(112)) { createNotebookDialog() })
-        documentTools.addView(actionButton("‹ Page", null, dp(74)) { changePage(-1) })
+        documentTools.addView(actionButton("▤", null, dp(44)) { openPdfPicker() }.apply { contentDescription = "Open PDF" })
+        documentTools.addView(actionButton("＋", null, dp(44)) { createNotebookDialog() }.apply { contentDescription = "New notebook" })
+        documentTools.addView(actionButton("‹", null, dp(40)) { changePage(-1) }.apply { contentDescription = "Previous page" })
         pageText = TextView(this).apply {
             text = "Notebook · 1 / 10"
             textSize = 10f
-            setTextColor(Color.rgb(187, 201, 220))
+            setTextColor(Color.rgb(195, 204, 201))
             gravity = Gravity.CENTER
             minWidth = dp(82)
         }
         documentTools.addView(pageText)
-        documentTools.addView(actionButton("Page ›", null, dp(74)) { changePage(1) })
-        documentTools.addView(actionButton("Save PDF", Color.rgb(42, 126, 225), dp(90)) { savePdfPicker() })
-        documentTools.addView(actionButton("Share", null, dp(70)) { shareLastPdf() })
-        documentTools.addView(actionButton("Updates", null, dp(78)) { checkForUpdates(showWhenNoUpdate = true) })
+        documentTools.addView(actionButton("›", null, dp(40)) { changePage(1) }.apply { contentDescription = "Next page" })
+        documentTools.addView(actionButton("↓ PDF", Color.rgb(75, 151, 140), dp(62)) { savePdfPicker() }.apply { contentDescription = "Export PDF" })
+        documentTools.addView(actionButton("↗", null, dp(42)) { shareLastPdf() }.apply { contentDescription = "Share PDF" })
+        documentTools.addView(actionButton("⇧", null, dp(42)) { openTransferPicker() }.apply { contentDescription = "Send file to Windows" })
+        documentTools.addView(actionButton("⟳", null, dp(42)) { checkForUpdates(showWhenNoUpdate = true) }.apply { contentDescription = "Check updates" })
 
         val documentScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
-            background = panelBackground(Color.rgb(18, 30, 45), 15)
+            background = panelBackground(Color.rgb(39, 43, 44), 15)
             setPadding(dp(7), dp(5), dp(7), dp(5))
             clipToPadding = false
             addView(documentTools)
@@ -175,48 +190,65 @@ class MainActivity : Activity() {
             bottomMargin = dp(7)
         })
 
-        val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        tools.addView(actionButton("Pen", Color.rgb(44, 59, 79), dp(55)) { drawingView.setTool(DrawingView.Tool.PEN) })
-        tools.addView(actionButton("Marker", null, dp(68)) { drawingView.setTool(DrawingView.Tool.MARKER) })
-        tools.addView(actionButton("Eraser", null, dp(66)) { drawingView.setTool(DrawingView.Tool.ERASER) })
-        tools.addView(actionButton("Undo", null, dp(56)) { drawingView.undo() })
-        tools.addView(actionButton("Redo", null, dp(56)) { drawingView.redo() })
-        tools.addView(actionButton("Clear", null, dp(56)) { confirmClear() })
-        tools.addView(actionButton("Color", null, dp(58)) { chooseColor() })
-        tools.addView(actionButton("Size", null, dp(52)) { chooseBrushSize() })
-        tools.addView(actionButton("Touch: On", null, dp(80)) {
+        toolsRail = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            background = panelBackground(Color.rgb(25, 32, 38), 14)
+            setPadding(dp(4), dp(5), dp(4), dp(5))
+        }
+        val dockControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+        toolsSideButton = actionButton("⇄", null, dp(42)) { moveToolsRail() }.apply { contentDescription = "Move toolbar to the other side" }
+        toolsToggleButton = actionButton("‹", null, dp(42)) { toggleToolsRail() }.apply { contentDescription = "Hide or show tools" }
+        dockControls.addView(toolsSideButton)
+        dockControls.addView(toolsToggleButton)
+        toolsRail.addView(dockControls)
+
+        val tools = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL }
+        tools.addView(actionButton("✎", Color.rgb(75, 151, 140), dp(44)) { drawingView.setTool(DrawingView.Tool.PEN) }.apply { contentDescription = "Pen" })
+        tools.addView(actionButton("▰", null, dp(44)) { drawingView.setTool(DrawingView.Tool.MARKER) }.apply { contentDescription = "Marker" })
+        tools.addView(actionButton("⌫", null, dp(44)) { drawingView.setTool(DrawingView.Tool.ERASER) }.apply { contentDescription = "Eraser" })
+        tools.addView(actionButton("↶", null, dp(44)) { drawingView.undo() }.apply { contentDescription = "Undo" })
+        tools.addView(actionButton("↷", null, dp(44)) { drawingView.redo() }.apply { contentDescription = "Redo" })
+        tools.addView(actionButton("●", null, dp(44)) { chooseColor() }.apply { contentDescription = "Ink color" })
+        tools.addView(actionButton("◉", null, dp(44)) { chooseBrushSize() }.apply { contentDescription = "Brush size" })
+        tools.addView(actionButton("⌁", null, dp(44)) {
             touchInputEnabled = !touchInputEnabled
             drawingView.setStylusOnly(!touchInputEnabled)
-            (it as Button).text = if (touchInputEnabled) "Touch: On" else "Pen only"
-        })
-        val toolsScroll = HorizontalScrollView(this).apply {
-            isHorizontalScrollBarEnabled = false
-            background = panelBackground(Color.rgb(18, 30, 45), 15)
-            setPadding(dp(7), dp(5), dp(7), dp(5))
-            clipToPadding = false
+            (it as Button).text = if (touchInputEnabled) "⌁" else "✒"
+            it.contentDescription = if (touchInputEnabled) "Touch input enabled" else "Stylus only"
+        }.apply { contentDescription = "Toggle touch input" })
+        toolsScroll = ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
             addView(tools)
         }
-        root.addView(toolsScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply {
-            bottomMargin = dp(7)
-        })
+        toolsRail.addView(toolsScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
         drawingView = DrawingView(this).apply {
             setFrameSink { frame -> client.send(frame) }
             setStylusOnly(false)
             setBrushSizeDp(3.5f)
         }
-        drawingView.background = panelBackground(Color.rgb(24, 35, 51), 18)
+        drawingView.background = panelBackground(Color.rgb(34, 38, 39), 18)
         drawingView.clipToOutline = true
-        val canvasParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-        canvasParams.topMargin = dp(2)
-        canvasParams.bottomMargin = dp(5)
-        root.addView(drawingView, canvasParams)
+                workspace = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        workspace.addView(drawingView, LinearLayout.LayoutParams(0, 0, 1f).apply {
+            height = ViewGroup.LayoutParams.MATCH_PARENT
+            marginStart = dp(4)
+            marginEnd = dp(4)
+        })
+        workspace.addView(toolsRail, LinearLayout.LayoutParams(dp(60), ViewGroup.LayoutParams.MATCH_PARENT))
+        root.addView(workspace, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply {
+            bottomMargin = dp(5)
+        })
 
         val hint = TextView(this).apply {
             text = "Same Wi-Fi · Connect · Write · Save as PDF"
             textSize = 10.5f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(145, 164, 188))
+            setTextColor(Color.rgb(151, 164, 161))
         }
         root.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)))
         setContentView(root)
@@ -224,6 +256,114 @@ class MainActivity : Activity() {
         val initial = buildTemplate("Ruled")
         drawingView.setPaper(initial, initial.width.toFloat() / initial.height.toFloat())
         updatePageLabel()
+    }
+
+
+    private fun toggleToolsRail() {
+        val visible = toolsScroll.visibility == View.VISIBLE
+        toolsScroll.visibility = if (visible) View.GONE else View.VISIBLE
+        toolsToggleButton.text = if (visible) "›" else "‹"
+        toolsToggleButton.contentDescription = if (visible) "Show tools" else "Hide tools"
+    }
+
+    private fun moveToolsRail() {
+        if (!::workspace.isInitialized || !::toolsRail.isInitialized) return
+        toolsOnLeft = !toolsOnLeft
+        workspace.removeView(toolsRail)
+        if (toolsOnLeft) workspace.addView(toolsRail, 0) else workspace.addView(toolsRail)
+        toolsSideButton.contentDescription = if (toolsOnLeft) "Toolbar on left" else "Toolbar on right"
+    }
+
+    private fun openTransferPicker() {
+        if (!client.isConnected) {
+            Toast.makeText(this, "Connect to Windows before sending files.", Toast.LENGTH_LONG).show()
+            return
+        }
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivityForResult(intent, sendFileRequest)
+    }
+
+    private fun sendSelectedFile(uri: Uri) {
+        try {
+            val name = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            } ?: "shared-file"
+            val mime = contentResolver.getType(uri) ?: "application/octet-stream"
+            val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                ?: throw IllegalStateException("Could not read the selected file.")
+            if (bytes.size > 100 * 1024 * 1024) throw IllegalArgumentException("Files larger than 100 MB are not supported yet.")
+            client.sendFile(name, mime, bytes) { success, message ->
+                runOnUiThread { Toast.makeText(this, message, Toast.LENGTH_LONG).show() }
+            }
+        } catch (error: Exception) {
+            Toast.makeText(this, "Could not send file: ${error.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun handleIncomingFrame(frame: String) {
+        try {
+            val json = JSONObject(frame)
+            when (json.optString("type")) {
+                "file_start" -> {
+                    val id = json.getString("id")
+                    val name = File(json.optString("name", "received-file")).name
+                    val mime = json.optString("mime", "application/octet-stream")
+                    val size = json.getLong("size")
+                    if (id.length > 64 || size < 0 || size > 100L * 1024 * 1024) return
+                    val folder = File(cacheDir, "incoming-transfers").apply { mkdirs() }
+                    val file = File.createTempFile("inkbridge-", ".part", folder)
+                    incomingTransfers[id] = IncomingTransfer(name, mime, size, file)
+                    Toast.makeText(this, "Receiving $name…", Toast.LENGTH_SHORT).show()
+                }
+                "file_chunk" -> {
+                    val id = json.getString("id")
+                    val transfer = incomingTransfers[id] ?: return
+                    val bytes = android.util.Base64.decode(json.getString("data"), android.util.Base64.DEFAULT)
+                    if (transfer.receivedBytes + bytes.size > transfer.expectedBytes) throw IllegalStateException("Transfer size exceeded.")
+                    FileOutputStream(transfer.file, true).use { it.write(bytes) }
+                    transfer.receivedBytes += bytes.size
+                }
+                "file_end" -> {
+                    val id = json.getString("id")
+                    val transfer = incomingTransfers.remove(id) ?: return
+                    if (transfer.receivedBytes != transfer.expectedBytes) throw IllegalStateException("Received file size does not match.")
+                    saveIncomingTransfer(transfer)
+                }
+                else -> if (::drawingView.isInitialized) drawingView.applyRemoteCommand(frame)
+            }
+        } catch (error: Exception) {
+            Toast.makeText(this, "File transfer error: ${error.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun saveIncomingTransfer(transfer: IncomingTransfer) {
+        try {
+            if (Build.VERSION.SDK_INT >= 29) {
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, transfer.name)
+                    put(MediaStore.MediaColumns.MIME_TYPE, transfer.mime)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/InkBridge")
+                }
+                val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: throw IllegalStateException("Could not create a Downloads entry.")
+                contentResolver.openOutputStream(uri)?.use { output -> transfer.file.inputStream().use { it.copyTo(output) } }
+                    ?: throw IllegalStateException("Could not write the received file.")
+                transfer.file.delete()
+                Toast.makeText(this, "Saved to Downloads/InkBridge: ${transfer.name}", Toast.LENGTH_LONG).show()
+            } else {
+                val folder = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "InkBridge").apply { mkdirs() }
+                val target = File(folder, transfer.name)
+                transfer.file.copyTo(target, overwrite = true)
+                transfer.file.delete()
+                Toast.makeText(this, "Saved: ${target.absolutePath}", Toast.LENGTH_LONG).show()
+            }
+        } catch (error: Exception) {
+            Toast.makeText(this, "Could not save received file: ${error.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun onConnectClicked() {
@@ -247,7 +387,7 @@ class MainActivity : Activity() {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             setSingleLine(true)
             filters = arrayOf(android.text.InputFilter.LengthFilter(6))
-            setText(prefs.getString("wifi_code", ""))
+            setText("")
         }
         val fields = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -283,7 +423,7 @@ class MainActivity : Activity() {
                     Toast.makeText(this, "Enter the laptop IP and its 6-digit connection code.", Toast.LENGTH_LONG).show()
                     showWifiConnectDialog()
                 } else {
-                    prefs.edit().putString("wifi_host", host).putString("wifi_code", code).apply()
+                    prefs.edit().putString("wifi_host", host).remove("wifi_code").apply()
                     statusText.text = "◌ Connecting over Wi-Fi…"
                     connectButton.isEnabled = false
                     client.connect(host, code)
@@ -597,20 +737,20 @@ class MainActivity : Activity() {
         shape = GradientDrawable.RECTANGLE
         cornerRadius = dp(radiusDp).toFloat()
         setColor(fill)
-        setStroke(dp(1), Color.rgb(42, 58, 78))
+        setStroke(dp(1), Color.rgb(75, 82, 83))
     }
 
     private fun actionButton(label: String, buttonColor: Int?, width: Int = 0, action: (View) -> Unit): Button = Button(this).apply {
         text = label
         textSize = 11f
         isAllCaps = false
-        setTextColor(Color.WHITE)
+        setTextColor(if (buttonColor == Color.rgb(75, 151, 140)) Color.rgb(15, 28, 26) else Color.WHITE)
         backgroundTintList = null
         background = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = dp(12).toFloat()
-            setColor(buttonColor ?: Color.rgb(30, 43, 62))
-            setStroke(dp(1), Color.rgb(48, 65, 88))
+            setColor(buttonColor ?: Color.rgb(48, 53, 54))
+            setStroke(dp(1), Color.rgb(75, 82, 83))
         }
         minWidth = 0
         minimumWidth = 0
@@ -632,6 +772,7 @@ class MainActivity : Activity() {
         when (requestCode) {
             openPdfRequest -> openPdf(data.data!!)
             createPdfRequest -> exportPdf(data.data!!)
+            sendFileRequest -> sendSelectedFile(data.data!!)
         }
     }
 
@@ -639,6 +780,8 @@ class MainActivity : Activity() {
         updateHandler.removeCallbacksAndMessages(null)
         if (::client.isInitialized) client.shutdown()
         closePdf()
+        incomingTransfers.values.forEach { it.file.delete() }
+        incomingTransfers.clear()
         super.onDestroy()
     }
 }

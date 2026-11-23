@@ -7,6 +7,10 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
+using System.Windows.Input;
+using Microsoft.Win32;
 using System.Windows.Threading;
 
 namespace InkBridge.Companion;
@@ -26,6 +30,17 @@ public partial class MainWindow : Window
     private OverlayWindow? _overlay;
     private bool _overlaySuppressed = true;
     private string _pairingCode = "";
+    private bool _captureSelectionActive;
+    private Point _captureStart;
+    private Point _captureEnd;
+    private readonly Dictionary<string, IncomingFileTransfer> _incomingFiles = new();
+    private sealed class IncomingFileTransfer
+    {
+        public required string Name { get; init; }
+        public required long ExpectedBytes { get; init; }
+        public required FileStream Stream { get; init; }
+        public long ReceivedBytes { get; set; }
+    }
 
     public MainWindow()
     {
@@ -38,27 +53,26 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        _pairingCode = LoadOrCreatePairingCode();
+        _pairingCode = GeneratePairingCode();
         PairingCodeText.Text = _pairingCode;
         RefreshNetworkAddresses();
         StartWifiServer();
         await CheckUpdatesAsync(manual: false);
     }
 
-    private static string LoadOrCreatePairingCode()
-    {
-        var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "InkBridge");
-        Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, "wifi-pairing-code.txt");
-        if (File.Exists(path))
-        {
-            var existing = File.ReadAllText(path).Trim();
-            if (existing.Length == 6 && existing.All(char.IsDigit)) return existing;
-        }
+    private static string GeneratePairingCode() => RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
-        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
-        File.WriteAllText(path, code, new UTF8Encoding(false));
-        return code;
+    private void NewPairingCodeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_client is not null)
+        {
+            MessageBox.Show(this, "Disconnect the tablet before changing the session code.",
+                "InkBridge session", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        _pairingCode = GeneratePairingCode();
+        PairingCodeText.Text = _pairingCode;
+        Log("A new session code was generated. The previous code is no longer valid.");
     }
 
     private void RefreshNetworkAddresses()
@@ -260,6 +274,7 @@ public partial class MainWindow : Window
             using var json = JsonDocument.Parse(line);
             if (!json.RootElement.TryGetProperty("type", out var typeElement)) return;
             var type = typeElement.GetString();
+            if (type is "file_start" or "file_chunk" or "file_end") { ProcessIncomingFileFrame(json.RootElement); return; }
             if (type is not ("paper" or "begin" or "point" or "end" or "undo" or "redo" or "clear")) return;
 
             // Always mirror the tablet's page and ink inside this application.
@@ -272,6 +287,145 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Log($"Ignored invalid ink frame: {ex.Message}");
+        }
+    }
+
+
+    private void CapturePageButton_Click(object sender, RoutedEventArgs e) => SavePreviewCapture(null);
+    private void CopyPageButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            int width=(int)Math.Ceiling(PreviewCanvas.ActualWidth), height=(int)Math.Ceiling(PreviewCanvas.ActualHeight);
+            if(width<2||height<2) throw new InvalidOperationException("The tablet preview is not ready yet.");
+            var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);
+            bitmap.Render(PreviewCanvas);
+            Clipboard.SetImage(bitmap);
+            PreviewStatusText.Text="Page copied to clipboard.";
+            Log("Tablet page copied to the Windows clipboard.");
+        }
+        catch(Exception ex){MessageBox.Show(this,ex.Message,"Copy failed",MessageBoxButton.OK,MessageBoxImage.Warning);}
+    }
+    private void SelectCaptureAreaButton_Click(object sender, RoutedEventArgs e)
+    {
+        _captureSelectionActive = true;
+        CaptureSelectionRect.Visibility = Visibility.Collapsed;
+        CaptureSelectionLayer.Cursor = Cursors.Cross;
+        PreviewStatusText.Text = "Drag over the page to select an area · Esc to cancel";
+        Log("Select an area inside the tablet preview.");
+    }
+    private void CaptureSelectionLayer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_captureSelectionActive) return;
+        _captureStart = e.GetPosition(CaptureSelectionLayer);
+        _captureEnd = _captureStart;
+        CaptureSelectionRect.Visibility = Visibility.Visible;
+        CaptureSelectionLayer.CaptureMouse();
+        UpdateCaptureSelection();
+    }
+    private void CaptureSelectionLayer_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_captureSelectionActive || !CaptureSelectionLayer.IsMouseCaptured) return;
+        _captureEnd = e.GetPosition(CaptureSelectionLayer);
+        UpdateCaptureSelection();
+    }
+    private void CaptureSelectionLayer_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_captureSelectionActive || !CaptureSelectionLayer.IsMouseCaptured) return;
+        _captureEnd = e.GetPosition(CaptureSelectionLayer);
+        CaptureSelectionLayer.ReleaseMouseCapture();
+        _captureSelectionActive = false;
+        CaptureSelectionLayer.Cursor = Cursors.Arrow;
+        CaptureSelectionRect.Visibility = Visibility.Collapsed;
+        var area = MakeCaptureRect(_captureStart, _captureEnd);
+        if (area.Width < 8 || area.Height < 8) { PreviewStatusText.Text = "Selection too small."; return; }
+        SavePreviewCapture(area);
+    }
+    private void UpdateCaptureSelection()
+    {
+        var r = MakeCaptureRect(_captureStart, _captureEnd);
+        Canvas.SetLeft(CaptureSelectionRect, r.Left); Canvas.SetTop(CaptureSelectionRect, r.Top);
+        CaptureSelectionRect.Width = r.Width; CaptureSelectionRect.Height = r.Height;
+    }
+    private static Rect MakeCaptureRect(Point a, Point b) => new(Math.Min(a.X,b.X),Math.Min(a.Y,b.Y),Math.Abs(a.X-b.X),Math.Abs(a.Y-b.Y));
+    private void SavePreviewCapture(Rect? crop)
+    {
+        try
+        {
+            int width=(int)Math.Ceiling(PreviewCanvas.ActualWidth), height=(int)Math.Ceiling(PreviewCanvas.ActualHeight);
+            if(width<2||height<2) throw new InvalidOperationException("The tablet preview is not ready yet.");
+            var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32); bitmap.Render(PreviewCanvas);
+            BitmapSource output=bitmap;
+            if(crop is Rect r)
+            {
+                int px=Math.Clamp((int)Math.Floor(r.X),0,width-1), py=Math.Clamp((int)Math.Floor(r.Y),0,height-1);
+                int pw=Math.Clamp((int)Math.Ceiling(r.Width),1,width-px), ph=Math.Clamp((int)Math.Ceiling(r.Height),1,height-py);
+                output=new CroppedBitmap(bitmap,new Int32Rect(px,py,pw,ph));
+            }
+            var dialog=new SaveFileDialog { Title="Save InkBridge capture",Filter="PNG image|*.png",FileName=$"InkBridge-{DateTime.Now:yyyyMMdd-HHmmss}.png",AddExtension=true,DefaultExt=".png" };
+            if(dialog.ShowDialog(this)!=true)return;
+            using var file=File.Create(dialog.FileName);
+            var encoder=new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(output)); encoder.Save(file);
+            PreviewStatusText.Text="Capture saved."; Log($"Capture saved: {dialog.FileName}");
+        }
+        catch(Exception ex){MessageBox.Show(this,ex.Message,"Capture failed",MessageBoxButton.OK,MessageBoxImage.Warning);}
+    }
+    private async void SendFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        if(_writer is null){MessageBox.Show(this,"Connect the tablet before sending a file.");return;}
+        var dialog=new OpenFileDialog{Title="Choose a file to send to the tablet",CheckFileExists=true};
+        if(dialog.ShowDialog(this)!=true)return;
+        var info=new FileInfo(dialog.FileName); const int chunkSize=256*1024;
+        if(info.Length>100L*1024*1024){MessageBox.Show(this,"Files larger than 100 MB are not supported yet.");return;}
+        var id=Guid.NewGuid().ToString("N"); var name=Path.GetFileName(dialog.FileName);
+        var total=(int)Math.Ceiling(info.Length/(double)chunkSize);
+        try
+        {
+            await SendJsonFrameAsync(new{type="file_start",id,name,size=info.Length,total});
+            await using var source=File.OpenRead(dialog.FileName); var buffer=new byte[chunkSize]; int index=0,read;
+            while((read=await source.ReadAsync(buffer.AsMemory(0,buffer.Length)))>0)
+                await SendJsonFrameAsync(new{type="file_chunk",id,index=index++,data=Convert.ToBase64String(buffer,0,read)});
+            await SendJsonFrameAsync(new{type="file_end",id});
+            Log($"Sent {name} to tablet ({info.Length:N0} bytes).");
+        }
+        catch(Exception ex){Log($"File transfer failed: {ex.Message}");MessageBox.Show(this,ex.Message,"File transfer failed",MessageBoxButton.OK,MessageBoxImage.Warning);}
+    }
+    private async Task SendJsonFrameAsync(object frame)
+    {
+        var writer=_writer??throw new IOException("Tablet is disconnected.");
+        var line=JsonSerializer.Serialize(frame); if(line.Length>MaxFrameLength)throw new InvalidOperationException("Transfer chunk exceeded frame limit.");
+        await _sendLock.WaitAsync();
+        try{if(!ReferenceEquals(writer,_writer))throw new IOException("Tablet disconnected during transfer.");await writer.WriteLineAsync(line);}
+        finally{_sendLock.Release();}
+    }
+    private void ProcessIncomingFileFrame(JsonElement root)
+    {
+        var type=root.GetProperty("type").GetString(); var id=root.TryGetProperty("id",out var idValue)?idValue.GetString()??"": "";
+        if(string.IsNullOrWhiteSpace(id)||id.Length>64)return;
+        if(type=="file_start")
+        {
+            var name=Path.GetFileName(root.GetProperty("name").GetString()??"received-file");
+            var size=root.GetProperty("size").GetInt64(); if(size<0||size>100L*1024*1024)throw new InvalidDataException("Incoming file exceeds 100 MB.");
+            var folder=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),"InkBridge Transfers");Directory.CreateDirectory(folder);
+            var path=Path.Combine(folder,$"{Path.GetFileNameWithoutExtension(name)}-{DateTime.Now:yyyyMMdd-HHmmssfff}{Path.GetExtension(name)}");
+            _incomingFiles[id]=new IncomingFileTransfer{Name=path,ExpectedBytes=size,Stream=File.Create(path)};Log($"Receiving {name}…");return;
+        }
+        if(!_incomingFiles.TryGetValue(id,out var transfer))return;
+        if(type=="file_chunk")
+        {
+            var bytes=Convert.FromBase64String(root.GetProperty("data").GetString()??"");
+            if(transfer.ReceivedBytes+bytes.Length>transfer.ExpectedBytes)throw new InvalidDataException("Incoming transfer exceeded declared size.");
+            transfer.Stream.Write(bytes);transfer.ReceivedBytes+=bytes.Length;return;
+        }
+        if(type=="file_end")
+        {
+            transfer.Stream.Dispose();_incomingFiles.Remove(id);
+            if(transfer.ReceivedBytes!=transfer.ExpectedBytes)
+            {
+                try { File.Delete(transfer.Name); } catch { }
+                throw new InvalidDataException("Received file size does not match declared size.");
+            }
+            Log($"File received: {transfer.Name}");PreviewStatusText.Text=$"Received {Path.GetFileName(transfer.Name)}";
         }
     }
 
@@ -396,6 +550,8 @@ public partial class MainWindow : Window
         try { _listener?.Stop(); } catch { }
         try { _client?.Close(); } catch { }
         _overlay?.Close();
+        foreach(var transfer in _incomingFiles.Values){try{transfer.Stream.Dispose();}catch{}}
+        _incomingFiles.Clear();
         _serverCts?.Dispose();
         _sendLock.Dispose();
         base.OnClosed(e);

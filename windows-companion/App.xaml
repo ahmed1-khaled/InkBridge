@@ -3,16 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="WindowBrush" Color="#0B1220" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#121E2D" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#397FE8" />
-        <SolidColorBrush x:Key="TextBrush" Color="#F3F7FD" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#9AAEC7" />
-        <SolidColorBrush x:Key="BorderBrush" Color="#25364B" />
+        <SolidColorBrush x:Key="WindowBrush" Color="#202124" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#2B2E31" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#83D2C6" />
+        <SolidColorBrush x:Key="TextBrush" Color="#F2F4F3" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#AEB5B7" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#454B4D" />
         <Style TargetType="Button">
-            <Setter Property="Foreground" Value="#F6F9FF" />
-            <Setter Property="Background" Value="#25364D" />
-            <Setter Property="BorderBrush" Value="#354A64" />
+            <Setter Property="Foreground" Value="#F2F4F3" />
+            <Setter Property="Background" Value="#303438" />
+            <Setter Property="BorderBrush" Value="#4B5556" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="14,9" />
             <Setter Property="Margin" Value="0,0,8,0" />
@@ -43,7 +43,7 @@
             </Setter>
         </Style>
         <Style TargetType="TextBox">
-            <Setter Property="CaretBrush" Value="#397FE8"/>
+            <Setter Property="CaretBrush" Value="#83D2C6"/>
         </Style>
     </Application.Resources>
 </Application>

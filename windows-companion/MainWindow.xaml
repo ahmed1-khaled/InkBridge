@@ -48,10 +48,9 @@
                     <TextBlock x:Name="NetworkAddressText" Text="Looking for a Wi-Fi or Ethernet address…"
                                FontSize="15" FontWeight="SemiBold" Margin="0,4,0,10" TextWrapping="Wrap"/>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="6-DIGIT CONNECTION CODE" FontSize="10" FontWeight="Bold"
-                                   Foreground="#91A9C5" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="PairingCodeText" Text="------" FontSize="21" FontWeight="Bold"
-                                   Foreground="#FFFFFF" Margin="14,0,0,0" FontFamily="Consolas"/>
+                        <TextBlock Text="SESSION CODE" FontSize="10" FontWeight="Bold" Foreground="#91A9C5" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="PairingCodeText" Text="------" FontSize="21" FontWeight="Bold" Foreground="#FFFFFF" Margin="14,0,0,0" FontFamily="Consolas"/>
+                        <Button Content="↻" ToolTip="Generate a new session code" Padding="9,3" Margin="12,0,0,0" Click="NewPairingCodeButton_Click"/>
                         <TextBlock Text="  ·  TCP port 45832" FontSize="11" Foreground="{StaticResource MutedBrush}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
@@ -86,17 +85,27 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="LIVE TABLET CANVAS" FontSize="12" FontWeight="Bold" Foreground="#79B7FF"/>
+                            <TextBlock Text="LIVE TABLET CANVAS" FontSize="12" FontWeight="Bold" Foreground="#83D2C6"/>
                             <TextBlock x:Name="PreviewStatusText" Text="Waiting for your tablet…" Foreground="{StaticResource MutedBrush}"
                                        FontSize="11" Margin="0,4,0,0"/>
                         </StackPanel>
-                        <Border Grid.Column="1" Background="#1A2A3F" CornerRadius="10" Padding="10,6">
-                            <TextBlock Text="PAGE PREVIEW" FontSize="9" FontWeight="Bold" Foreground="#A8C8EB"/>
-                        </Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="▣ Save PNG" ToolTip="Save the full tablet page as PNG" Click="CapturePageButton_Click"/>
+                            <Button Content="⧉ Copy" ToolTip="Copy the full tablet page to the clipboard" Click="CopyPageButton_Click"/>
+                            <Button Content="⌗ Crop" ToolTip="Drag to crop a custom area" Click="SelectCaptureAreaButton_Click" Margin="0"/>
+                        </StackPanel>
                     </Grid>
-                    <Border Grid.Row="1" Background="#111A27" BorderBrush="#2B3D54" BorderThickness="1"
-                            CornerRadius="13" Padding="12">
-                        <local:InkCanvasView x:Name="PreviewCanvas"/>
+                    <Border Grid.Row="1" Background="#111A27" BorderBrush="#2B3D54" BorderThickness="1" CornerRadius="13" Padding="12">
+                        <Grid>
+                            <local:InkCanvasView x:Name="PreviewCanvas"/>
+                            <Canvas x:Name="CaptureSelectionLayer" Background="Transparent"
+                                    MouseLeftButtonDown="CaptureSelectionLayer_MouseLeftButtonDown"
+                                    MouseMove="CaptureSelectionLayer_MouseMove"
+                                    MouseLeftButtonUp="CaptureSelectionLayer_MouseLeftButtonUp">
+                                <Rectangle x:Name="CaptureSelectionRect" Visibility="Collapsed" Stroke="#83D2C6"
+                                           StrokeThickness="2" Fill="#3383D2C6" StrokeDashArray="4,3"/>
+                            </Canvas>
+                        </Grid>
                     </Border>
                     <TextBlock Grid.Row="2" Text="Your paper, PDF page and pen strokes appear here in real time. No full-screen mirror required."
                                Foreground="{StaticResource MutedBrush}" FontSize="10" Margin="3,11,3,0"
@@ -114,8 +123,9 @@
                         BorderThickness="1" CornerRadius="16" Padding="16" Margin="0,0,0,14">
                     <StackPanel>
                         <TextBlock Text="PRESENTATION TOOLS" FontSize="11" FontWeight="Bold" Foreground="#79B7FF"/>
-                        <TextBlock Text="Use the page preview inside this app, or optionally draw over PowerPoint, PDFs and other desktop apps."
+                        <TextBlock Text="Use the page preview, capture it, or draw over PowerPoint, PDFs and other desktop apps."
                                    Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,12"/>
+                        <Button Content="⇧ Send file to tablet" Click="SendFileButton_Click" Background="{StaticResource AccentBrush}"/>
                         <WrapPanel>
                             <Button x:Name="ShowOverlayButton" Content="Show desktop overlay" Background="{StaticResource AccentBrush}"
                                     Click="ShowOverlayButton_Click"/>
