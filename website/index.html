@@ -213,6 +213,9 @@
     .footer-links a:hover{color:#e2edff}
     .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
     .reveal.visible{opacity:1;transform:translateY(0)}
+    /* Keep every section readable even if motion scripts or observers are blocked. */
+    .reveal{opacity:1;transform:none}
+    .reveal.visible{opacity:1;transform:none}
     .delay-1{transition-delay:.08s}.delay-2{transition-delay:.16s}.delay-3{transition-delay:.24s}
     @keyframes deviceFloat{0%,100%{transform:translateX(-50%) translateY(0) rotateX(2deg)}50%{transform:translateX(-50%) translateY(-8px) rotateX(1deg)}}
     @keyframes tabletFloat{0%,100%{transform:rotate(5deg) translateY(0)}50%{transform:rotate(3deg) translateY(-10px)}}
@@ -782,7 +785,7 @@ footer{background:#14234c;border-color:#263e79;color:#d3e0ff}
         document.querySelectorAll(".button.primary,.nav-download").forEach(el => {
           el.addEventListener("pointermove", e => {
             const r=el.getBoundingClientRect(), dx=(e.clientX-r.left-r.width/2)/r.width, dy=(e.clientY-r.top-r.height/2)/r.height;
-            el.style.transform=\`translate(\${dx*5}px,\${dy*4}px) translateY(-2px)\`;
+            el.style.transform=`translate(${dx*5}px,${dy*4}px) translateY(-2px)`;
           });
           el.addEventListener("pointerleave", () => el.style.transform="");
         });
@@ -792,8 +795,8 @@ footer{background:#14234c;border-color:#263e79;color:#d3e0ff}
           hero.style.setProperty("--mx", px.toFixed(3));
           hero.style.setProperty("--my", py.toFixed(3));
           const device=hero.querySelector(".desktop-device"), tablet=hero.querySelector(".tablet-device");
-          if(device) device.style.transform=\`translateX(calc(-50% + \${px*9}px)) rotateY(\${px*2.5}deg) rotateX(\${-py*2}deg)\`;
-          if(tablet) tablet.style.marginRight=\`\${px*-7}px\`;
+          if(device) device.style.transform=`translateX(calc(-50% + ${px*9}px)) rotateY(${px*2.5}deg) rotateX(${-py*2}deg)`;
+          if(tablet) tablet.style.marginRight=`${px*-7}px`;
         }, {passive:true});
         if(hero) hero.addEventListener("pointerleave", () => {
           const device=hero.querySelector(".desktop-device"), tablet=hero.querySelector(".tablet-device");
@@ -803,7 +806,7 @@ footer{background:#14234c;border-color:#263e79;color:#d3e0ff}
       }
       // Stagger each visible card group without delaying the first viewport.
       document.querySelectorAll(".feature-grid .feature-card,.steps .step,.download-cards .download-card").forEach((el,i) => {
-        el.style.transitionDelay = \`\${(i%3)*75}ms\`;
+        el.style.transitionDelay = `${(i%3)*75}ms`;
       });
     })();
 
