@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     }
 
     const windowsSnapshot = (target === "all" || target === "windows")
-      ? await db.collection("devices").where("platform", "==", "windows").get()
+      ? await db.collection("devices").where("platform", "==", "windows").where("lastSeen", ">=", new Date(Date.now() - 30 * 86400000)).get()
       : null;
     const windowsQueued = windowsSnapshot?.size || 0;
     await announcement.update({ androidAccepted: sent, androidFailed: failed, windowsQueued, deliveryState: "provider_accepted_or_queued" });
