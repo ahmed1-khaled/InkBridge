@@ -56,13 +56,22 @@ export default async function handler(req, res) {
     const windowsSnapshot = (target === "all" || target === "windows")
       ? await db.collection("devices").where("platform", "==", "windows").get()
       : null;
+    const windowsQueued = windowsSnapshot?.size || 0;
+    await announcement.update({ androidAccepted: sent, androidFailed: failed, windowsQueued, deliveryState: "provider_accepted_or_queued" });
+    await db.collection("adminAudit").add({
+      action: "announcement.sent",
+      targetId: announcement.id,
+      status: target,
+      actor: admin.email,
+      createdAt: FieldValue.serverTimestamp(),
+    });
 
     return json(res, 200, {
       success: true,
       announcementId: announcement.id,
       androidAccepted: sent,
       androidFailed: failed,
-      windowsQueued: windowsSnapshot?.size || 0,
+      windowsQueued,
       windowsDelivery: "Queued for Windows installations after the Companion polling client is installed."
     });
   } catch (error) {
