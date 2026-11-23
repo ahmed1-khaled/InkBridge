@@ -27,6 +27,9 @@ export default async function handler(req, res) {
     await ref.set({
       platform,
       appVersion: typeof appVersion === "string" ? appVersion.slice(0, 32) : "unknown",
+      deviceModel: typeof req.body?.deviceModel === "string" ? req.body.deviceModel.slice(0, 80) : existing.data()?.deviceModel || null,
+      osVersion: typeof req.body?.osVersion === "string" ? req.body.osVersion.slice(0, 50) : existing.data()?.osVersion || null,
+      locale: typeof req.body?.locale === "string" ? req.body.locale.slice(0, 20) : existing.data()?.locale || null,
       fcmToken: fcmToken || existing.data()?.fcmToken || null,
       notificationsEnabled: platform === "android" ? Boolean(notificationsEnabled && (fcmToken || existing.data()?.fcmToken)) : true,
       secretHash,
