@@ -310,7 +310,7 @@ class MainActivity : Activity() {
 
     private fun labeledButton(icon: String, label: String, fill: Int?, width: Int, action: (View) -> Unit): Button =
         Button(this).apply {
-            text = "$icon\\n$label"
+            text = "$icon\n$label"
             textSize = 10.5f
             isAllCaps = false
             gravity = Gravity.CENTER
@@ -359,7 +359,7 @@ class MainActivity : Activity() {
     private fun toggleToolsRail() {
         val visible = toolsScroll.visibility == View.VISIBLE
         toolsScroll.visibility = if (visible) View.GONE else View.VISIBLE
-        toolsToggleButton.text = if (visible) "›\\nShow" else "‹\\nHide"
+        toolsToggleButton.text = if (visible) "›\nShow" else "‹\nHide"
         toolsToggleButton.contentDescription = if (visible) "Show tools" else "Hide tools"
     }
 
@@ -368,7 +368,7 @@ class MainActivity : Activity() {
         toolsOnLeft = !toolsOnLeft
         workspace.removeView(toolsRail)
         if (toolsOnLeft) workspace.addView(toolsRail, 0) else workspace.addView(toolsRail)
-        toolsSideButton.text = if (toolsOnLeft) "⇄\\nMove right" else "⇄\\nMove left"
+        toolsSideButton.text = if (toolsOnLeft) "⇄\nMove right" else "⇄\nMove left"
         toolsSideButton.contentDescription = if (toolsOnLeft) "Move toolbar to the right" else "Move toolbar to the left"
     }
 
