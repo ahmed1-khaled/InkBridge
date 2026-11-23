@@ -118,16 +118,44 @@ class WifiTcpClient(
 
     fun send(frame: String) {
         if (!connected) return
+        io.execute { writeFrame(frame) }
+    }
+
+    private fun writeFrame(frame: String) {
+        val activeWriter = writer ?: return
+        try {
+            activeWriter.write(frame)
+            activeWriter.newLine()
+            activeWriter.flush()
+        } catch (error: IOException) {
+            connected = false
+            closeSocket()
+            onState(false, "Wi-Fi disconnected: ${error.message ?: "could not send data"}")
+        }
+    }
+
+    fun sendFile(name: String, mime: String, bytes: ByteArray, onComplete: (Boolean, String) -> Unit) {
+        if (!connected) { onComplete(false, "Connect to Windows first."); return }
         io.execute {
-            val activeWriter = writer ?: return@execute
             try {
-                activeWriter.write(frame)
-                activeWriter.newLine()
-                activeWriter.flush()
-            } catch (error: IOException) {
-                connected = false
-                closeSocket()
-                onState(false, "Wi-Fi disconnected: ${error.message ?: "could not send ink"}")
+                val id = java.util.UUID.randomUUID().toString().replace("-", "")
+                val chunkSize = 256 * 1024
+                val total = (bytes.size + chunkSize - 1) / chunkSize
+                writeFrame(JSONObject().put("type", "file_start").put("id", id).put("name", name)
+                    .put("mime", mime).put("size", bytes.size).put("total", total).toString())
+                var offset = 0
+                var index = 0
+                while (offset < bytes.size) {
+                    val length = minOf(chunkSize, bytes.size - offset)
+                    val chunk = android.util.Base64.encodeToString(bytes, offset, length, android.util.Base64.NO_WRAP)
+                    writeFrame(JSONObject().put("type", "file_chunk").put("id", id)
+                        .put("index", index++).put("data", chunk).toString())
+                    offset += length
+                }
+                writeFrame(JSONObject().put("type", "file_end").put("id", id).toString())
+                onComplete(true, "File sent to Windows: $name")
+            } catch (error: Exception) {
+                onComplete(false, "File transfer failed: ${error.message}")
             }
         }
     }
