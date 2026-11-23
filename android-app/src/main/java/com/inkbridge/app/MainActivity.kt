@@ -240,9 +240,9 @@ class MainActivity : Activity() {
         toolButtons[DrawingView.Tool.ERASER] = labeledButton("⌫", "Eraser", null, 68) {
             selectTool(DrawingView.Tool.ERASER)
         }
-        tools.addView(toolButtons[DrawingView.Tool.PEN])
-        tools.addView(toolButtons[DrawingView.Tool.MARKER])
-        tools.addView(toolButtons[DrawingView.Tool.ERASER])
+        tools.addView(requireNotNull(toolButtons[DrawingView.Tool.PEN]))
+        tools.addView(requireNotNull(toolButtons[DrawingView.Tool.MARKER]))
+        tools.addView(requireNotNull(toolButtons[DrawingView.Tool.ERASER]))
         tools.addView(labeledButton("↶", "Undo", null, 68) { drawingView.undo() })
         tools.addView(labeledButton("↷", "Redo", null, 68) { drawingView.redo() })
         colorToolButton = labeledButton("●", "Color", null, 68) { chooseColor() }.apply {
