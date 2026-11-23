@@ -1,4 +1,4 @@
-import { json } from "./_lib/firebase.js";
+import { json } from "../lib/firebase-admin.js";
 
 export default function handler(req, res) {
   if (req.method !== "GET") return json(res, 405, { error: "Method not allowed." });
