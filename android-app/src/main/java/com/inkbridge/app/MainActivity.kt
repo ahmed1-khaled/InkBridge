@@ -310,8 +310,11 @@ class MainActivity : Activity() {
 
     private fun labeledButton(icon: String, label: String, fill: Int?, width: Int, action: (View) -> Unit): Button =
         Button(this).apply {
-            text = "$icon\n$label"
-            textSize = 10.5f
+            val buttonText = android.text.SpannableString("$icon\n$label")
+            buttonText.setSpan(android.text.style.RelativeSizeSpan(1.75f), 0, icon.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            buttonText.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, icon.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            text = buttonText
+            textSize = 11.5f
             isAllCaps = false
             gravity = Gravity.CENTER
             setLineSpacing(0f, 0.92f)
