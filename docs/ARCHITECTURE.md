@@ -16,7 +16,7 @@
 
 - .NET 8 WPF desktop application.
 - A TcpListener binds to all IPv4 interfaces on TCP port 45832. It accepts one tablet stream at a time.
-- A random six-digit connection code is stored in the current Windows user's LocalAppData folder and displayed in the app. The Android client must provide it in the first JSON handshake frame.
+- A cryptographically random six-digit session code is generated in memory whenever the Windows companion starts. It is never persisted; the user can regenerate it while disconnected. The Android client must provide the currently displayed code in the first JSON handshake frame.
 - The receiver validates each frame and updates InkCanvasView, a page preview embedded inside the main application window.
 - The optional OverlayWindow remains a transparent topmost click-through surface for presenting over PowerPoint, PDF readers and browsers. It is disabled by default and can be enabled from the Windows UI.
 - UpdateService checks public GitHub Releases and offers a verified self-update when a newer Windows build is published.
@@ -28,7 +28,8 @@
 - The initial client frame is {"type":"hello","token":"123456","protocol":2}. Windows replies with {"type":"welcome","protocol":2} or {"type":"denied"}.
 - Each following frame is a compact UTF-8 JSON object followed by a newline. A receiver reads complete lines rather than assuming one socket read equals one frame.
 - The paper frame contains the page aspect ratio and a Base64 JPEG image. Drawing frames contain normalized page coordinates, pressure, color and width.
-- The 6-digit token is a local pairing gate, not end-to-end encryption. Use a trusted private network; Windows Firewall should allow InkBridge on Private networks.
+- The 6-digit session token is a local pairing gate, not end-to-end encryption. It changes on each Windows companion launch. Use a trusted private network; Windows Firewall should allow InkBridge on Private networks.
+- Files move in either direction as bounded JSON/Base64 chunks on the authenticated connection. Current application limit is 100 MB per file; chunk size is 256 KiB.
 
 ## Data flow
 
@@ -61,9 +62,12 @@ Android stylus/touch MotionEvent
 ## Scope and privacy
 
 - No account, cloud relay or external drawing server.
+- Windows can export the live page preview as PNG or crop a selected rectangle; it can also copy the full preview to the clipboard.
+- Android's vertical tool dock can be hidden or moved between the left and right edges of the writing surface.
+- File transfer stays on the existing authenticated local Wi-Fi connection.
 - The drawing session stays on the local network; GitHub is used for release metadata and update downloads.
 - One Android device and one Windows receiver at a time.
-- The local 6-digit connection code is saved in Windows LocalAppData and in Android's private app preferences after entry. It should not be treated as cryptographic encryption.
+- The Windows session code is held in memory only and rotates on application restart. Android remembers the laptop address, not the old session code. The code should not be treated as cryptographic encryption.
 
 ## Overlay visibility
 
