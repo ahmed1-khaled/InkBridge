@@ -76,8 +76,8 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(11, 18, 32)
-        window.navigationBarColor = Color.rgb(11, 18, 32)
+        window.statusBarColor = Color.rgb(29, 31, 32)
+        window.navigationBarColor = Color.rgb(29, 31, 32)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         client = WifiTcpClient(
@@ -127,7 +127,7 @@ class MainActivity : Activity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(10), dp(8), dp(10), dp(8))
-            setBackgroundColor(Color.rgb(11, 18, 32))
+            setBackgroundColor(Color.rgb(29, 31, 32))
         }
 
         val header = LinearLayout(this).apply {
@@ -145,13 +145,13 @@ class MainActivity : Activity() {
             text = "○ Wi-Fi not connected"
             textSize = 11f
             maxLines = 1
-            setTextColor(Color.rgb(167, 183, 204))
+            setTextColor(Color.rgb(177, 187, 185))
             gravity = Gravity.CENTER_VERTICAL
         }
-        connectButton = actionButton("Connect Wi-Fi", Color.rgb(54, 117, 232), dp(112)) { onConnectClicked() }
+        connectButton = actionButton("Connect Wi-Fi", Color.rgb(75, 151, 140), dp(112)) { onConnectClicked() }
         fullScreenButton = actionButton("Full screen", null, dp(96)) { toggleFullScreen() }
         connectButton.setOnLongClickListener { showWifiConnectDialog(); true }
-        header.background = panelBackground(Color.rgb(18, 30, 45), 17)
+        header.background = panelBackground(Color.rgb(39, 43, 44), 17)
         header.setPadding(dp(12), dp(5), dp(8), dp(5))
         header.addView(brand, LinearLayout.LayoutParams(0, dp(48), 1.0f))
         header.addView(statusText, LinearLayout.LayoutParams(0, dp(48), 1.1f))
@@ -168,20 +168,20 @@ class MainActivity : Activity() {
         pageText = TextView(this).apply {
             text = "Notebook · 1 / 10"
             textSize = 10f
-            setTextColor(Color.rgb(187, 201, 220))
+            setTextColor(Color.rgb(195, 204, 201))
             gravity = Gravity.CENTER
             minWidth = dp(82)
         }
         documentTools.addView(pageText)
         documentTools.addView(actionButton("›", null, dp(40)) { changePage(1) }.apply { contentDescription = "Next page" })
-        documentTools.addView(actionButton("↓ PDF", Color.rgb(42, 126, 225), dp(62)) { savePdfPicker() }.apply { contentDescription = "Export PDF" })
+        documentTools.addView(actionButton("↓ PDF", Color.rgb(75, 151, 140), dp(62)) { savePdfPicker() }.apply { contentDescription = "Export PDF" })
         documentTools.addView(actionButton("↗", null, dp(42)) { shareLastPdf() }.apply { contentDescription = "Share PDF" })
         documentTools.addView(actionButton("⇧", null, dp(42)) { openTransferPicker() }.apply { contentDescription = "Send file to Windows" })
         documentTools.addView(actionButton("⟳", null, dp(42)) { checkForUpdates(showWhenNoUpdate = true) }.apply { contentDescription = "Check updates" })
 
         val documentScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
-            background = panelBackground(Color.rgb(18, 30, 45), 15)
+            background = panelBackground(Color.rgb(39, 43, 44), 15)
             setPadding(dp(7), dp(5), dp(7), dp(5))
             clipToPadding = false
             addView(documentTools)
@@ -204,7 +204,7 @@ class MainActivity : Activity() {
         toolsRail.addView(dockControls)
 
         val tools = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL }
-        tools.addView(actionButton("✎", Color.rgb(58, 105, 103), dp(44)) { drawingView.setTool(DrawingView.Tool.PEN) }.apply { contentDescription = "Pen" })
+        tools.addView(actionButton("✎", Color.rgb(75, 151, 140), dp(44)) { drawingView.setTool(DrawingView.Tool.PEN) }.apply { contentDescription = "Pen" })
         tools.addView(actionButton("▰", null, dp(44)) { drawingView.setTool(DrawingView.Tool.MARKER) }.apply { contentDescription = "Marker" })
         tools.addView(actionButton("⌫", null, dp(44)) { drawingView.setTool(DrawingView.Tool.ERASER) }.apply { contentDescription = "Eraser" })
         tools.addView(actionButton("↶", null, dp(44)) { drawingView.undo() }.apply { contentDescription = "Undo" })
@@ -228,7 +228,7 @@ class MainActivity : Activity() {
             setStylusOnly(false)
             setBrushSizeDp(3.5f)
         }
-        drawingView.background = panelBackground(Color.rgb(24, 35, 51), 18)
+        drawingView.background = panelBackground(Color.rgb(34, 38, 39), 18)
         drawingView.clipToOutline = true
         val canvasParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
         canvasParams.topMargin = dp(2)
@@ -251,7 +251,7 @@ class MainActivity : Activity() {
             text = "Same Wi-Fi · Connect · Write · Save as PDF"
             textSize = 10.5f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(145, 164, 188))
+            setTextColor(Color.rgb(151, 164, 161))
         }
         root.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)))
         setContentView(root)
@@ -740,20 +740,20 @@ class MainActivity : Activity() {
         shape = GradientDrawable.RECTANGLE
         cornerRadius = dp(radiusDp).toFloat()
         setColor(fill)
-        setStroke(dp(1), Color.rgb(42, 58, 78))
+        setStroke(dp(1), Color.rgb(75, 82, 83))
     }
 
     private fun actionButton(label: String, buttonColor: Int?, width: Int = 0, action: (View) -> Unit): Button = Button(this).apply {
         text = label
         textSize = 11f
         isAllCaps = false
-        setTextColor(Color.WHITE)
+        setTextColor(if (buttonColor == Color.rgb(75, 151, 140)) Color.rgb(15, 28, 26) else Color.WHITE)
         backgroundTintList = null
         background = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = dp(12).toFloat()
-            setColor(buttonColor ?: Color.rgb(30, 43, 62))
-            setStroke(dp(1), Color.rgb(48, 65, 88))
+            setColor(buttonColor ?: Color.rgb(48, 53, 54))
+            setStroke(dp(1), Color.rgb(75, 82, 83))
         }
         minWidth = 0
         minimumWidth = 0
