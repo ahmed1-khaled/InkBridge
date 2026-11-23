@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All application data is accessed through authenticated Vercel APIs.
+    // Firebase Admin SDK bypasses these client rules; browser/mobile clients must not.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
