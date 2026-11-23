@@ -142,7 +142,7 @@ class MainActivity : Activity() {
             text = "INKBRIDGE"
             textSize = 18f
             letterSpacing = 0.12f
-            setTextColor(Color.WHITE)
+            setTextColor(Color.rgb(23, 33, 61))
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
         statusText = TextView(this).apply {
