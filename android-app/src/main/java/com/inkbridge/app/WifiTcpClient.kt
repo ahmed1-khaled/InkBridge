@@ -35,16 +35,25 @@ class WifiTcpClient(
 
     val isConnected: Boolean get() = connected
 
+    private fun normalizeDigits(value: String): String = buildString(value.length) {
+        value.forEach { character ->
+            val digit = Character.digit(character, 10)
+            append(if (digit in 0..9) ('0'.code + digit).toChar() else character)
+        }
+    }
+
     fun connect(host: String, pairingCode: String) {
         io.execute {
             closeSocket()
-            val target = host.trim()
+            val target = normalizeDigits(host).trim()
+            val code = normalizeDigits(pairingCode).trim()
             onState(false, "Connecting to $target over Wi-Fi…")
             var candidate: Socket? = null
+            var stage = "TCP connection"
             try {
                 require(target.isNotBlank()) { "Enter the laptop's IP address." }
-                require(pairingCode.length == 6 && pairingCode.all(Char::isDigit)) {
-                    "The connection code must contain 6 digits."
+                require(code.length == 6 && code.all { it in '0'..'9' }) {
+                    "Enter the six digits exactly as shown in the Windows app."
                 }
 
                 val connectedSocket = Socket().apply {
@@ -55,12 +64,13 @@ class WifiTcpClient(
                 }
                 candidate = connectedSocket
 
+                stage = "session-code verification"
                 val input = BufferedReader(InputStreamReader(connectedSocket.getInputStream(), Charsets.UTF_8))
                 val output = BufferedWriter(OutputStreamWriter(connectedSocket.getOutputStream(), Charsets.UTF_8))
 
                 output.write(JSONObject()
                     .put("type", "hello")
-                    .put("token", pairingCode)
+                    .put("token", code)
                     .put("protocol", 2)
                     .toString())
                 output.newLine()
@@ -85,8 +95,11 @@ class WifiTcpClient(
                 if (socket === candidate) socket = null
                 writer = null
                 val reason = when (error) {
-                    is java.net.SocketTimeoutException -> "Connection timed out. Check the IP, Wi-Fi network and Windows Firewall."
-                    is java.net.ConnectException -> "Laptop refused the connection. Make sure InkBridge is open on Windows."
+                    is java.net.SocketTimeoutException ->
+                        if (stage == "TCP connection") "No response from that IP on TCP port 45832. Check the recommended Wi-Fi IP, same network and Windows Firewall."
+                        else "The laptop answered the network connection but did not complete pairing. Recheck the current six-digit code."
+                    is java.net.ConnectException -> "The laptop refused TCP port 45832. Open the Windows companion and allow InkBridge through Windows Firewall."
+                    is java.net.UnknownHostException -> "That IP address could not be found. Copy the recommended IPv4 address from the Windows app."
                     else -> error.message ?: error.javaClass.simpleName
                 }
                 onState(false, "Wi-Fi connection failed: $reason")
