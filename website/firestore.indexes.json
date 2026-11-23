@@ -27,6 +27,38 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "devices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "platform",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSeen",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "devices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "platform",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "notificationsEnabled",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSeen",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
