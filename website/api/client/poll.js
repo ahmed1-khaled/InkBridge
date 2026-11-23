@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import { firebaseServices, json } from "../_lib/firebase.js";
+import { firebaseServices, json } from "../../lib/firebase-admin.js";
 
 const hash = value => createHash("sha256").update(value, "utf8").digest("hex");
 const safeEqual = (a, b) => {
