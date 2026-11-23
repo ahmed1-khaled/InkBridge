@@ -25,3 +25,6 @@ artifacts/
 # Android signing material - never commit these files
 *.p12
 *.pfx
+
+# Node.js dependencies
+node_modules/
