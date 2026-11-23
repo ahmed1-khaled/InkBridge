@@ -761,14 +761,15 @@ footer{background:#14234c;border-color:#263e79;color:#d3e0ff}
         document.body.classList.add("has-pointer");
         let x = innerWidth/2, y = innerHeight/2, ax=x, ay=y, raf=0;
         const draw = () => {
-          ax += (x-ax)*.22; ay += (y-ay)*.22;
-          core.style.transform = \`translate3d(\${x}px,\${y}px,0) translate(-50%,-50%)\`;
-          aura.style.transform = \`translate3d(\${ax}px,\${ay}px,0) translate(-50%,-50%)\`;
-          raf = requestAnimationFrame(draw);
+          ax += (x-ax)*.28; ay += (y-ay)*.28;
+          core.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
+          aura.style.transform = `translate3d(${ax}px,${ay}px,0) translate(-50%,-50%)`;
+          if (Math.abs(x-ax)>.4 || Math.abs(y-ay)>.4) raf=requestAnimationFrame(draw);
+          else raf=0;
         };
         window.addEventListener("pointermove", e => {
           x=e.clientX; y=e.clientY;
-          if (!raf) draw();
+          if (!raf) raf=requestAnimationFrame(draw);
           document.body.classList.add("pointer-ready");
         }, {passive:true});
         document.addEventListener("pointerover", e => {
