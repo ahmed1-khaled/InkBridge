@@ -118,11 +118,11 @@ class WifiTcpClient(
 
     fun send(frame: String) {
         if (!connected) return
-        io.execute { writeFrame(frame) }
+        io.execute { try { writeFrame(frame) } catch (_: Exception) { } }
     }
 
     private fun writeFrame(frame: String) {
-        val activeWriter = writer ?: return
+        val activeWriter = writer ?: throw IOException("Tablet connection is not available.")
         try {
             activeWriter.write(frame)
             activeWriter.newLine()
@@ -131,6 +131,7 @@ class WifiTcpClient(
             connected = false
             closeSocket()
             onState(false, "Wi-Fi disconnected: ${error.message ?: "could not send data"}")
+            throw error
         }
     }
 
