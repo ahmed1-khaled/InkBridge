@@ -49,6 +49,11 @@ class MainActivity : Activity() {
     private lateinit var toolsSideButton: Button
     private lateinit var toolsToggleButton: Button
     private var toolsOnLeft = false
+    private val toolButtons = mutableMapOf<DrawingView.Tool, Button>()
+    private lateinit var colorToolButton: Button
+    private lateinit var stylusToolButton: Button
+    private var selectedTool = DrawingView.Tool.PEN
+    private var currentInkColor = Color.rgb(25, 31, 40)
     private val sendFileRequest = 4105
     private data class IncomingTransfer(val name: String, val mime: String, val expectedBytes: Long, val file: File, var receivedBytes: Long = 0)
     private val incomingTransfers = mutableMapOf<String, IncomingTransfer>()
@@ -137,6 +142,8 @@ class MainActivity : Activity() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            background = panelBackground(Color.WHITE, 17)
+            setPadding(dp(12), dp(5), dp(8), dp(5))
         }
         val brand = TextView(this).apply {
             text = "INKBRIDGE"
@@ -152,36 +159,42 @@ class MainActivity : Activity() {
             setTextColor(Color.rgb(92, 105, 132))
             gravity = Gravity.CENTER_VERTICAL
         }
-        connectButton = actionButton("Connect Wi-Fi", Color.rgb(54, 88, 245), dp(112)) { onConnectClicked() }
-        fullScreenButton = actionButton("Full screen", null, dp(96)) { toggleFullScreen() }
+        connectButton = actionButton("Connect", Color.rgb(54, 88, 245), dp(104)) { onConnectClicked() }
+        fullScreenButton = actionButton("⛶", null, dp(48)) { toggleFullScreen() }.apply {
+            contentDescription = "Toggle full screen"
+            textSize = 19f
+        }
         connectButton.setOnLongClickListener { showWifiConnectDialog(); true }
-        header.background = panelBackground(Color.WHITE, 17)
-        header.setPadding(dp(12), dp(5), dp(8), dp(5))
         header.addView(brand, LinearLayout.LayoutParams(0, dp(48), 1.0f))
-        header.addView(statusText, LinearLayout.LayoutParams(0, dp(48), 1.1f))
+        header.addView(statusText, LinearLayout.LayoutParams(0, dp(48), 1.05f))
         header.addView(connectButton)
         header.addView(fullScreenButton)
         root.addView(header, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(58)).apply {
             bottomMargin = dp(8)
         })
 
-        val documentTools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        documentTools.addView(actionButton("▤", null, dp(44)) { openPdfPicker() }.apply { contentDescription = "Open PDF" })
-        documentTools.addView(actionButton("＋", null, dp(44)) { createNotebookDialog() }.apply { contentDescription = "New notebook" })
-        documentTools.addView(actionButton("‹", null, dp(40)) { changePage(-1) }.apply { contentDescription = "Previous page" })
+        val documentTools = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        documentTools.addView(labeledButton("▤", "Open PDF", null, 76) { openPdfPicker() })
+        documentTools.addView(labeledButton("＋", "New", null, 62) { createNotebookDialog() })
+        documentTools.addView(labeledButton("‹", "Previous", null, 70) { changePage(-1) })
         pageText = TextView(this).apply {
             text = "Notebook · 1 / 10"
-            textSize = 10f
+            textSize = 11f
             setTextColor(Color.rgb(39, 53, 86))
             gravity = Gravity.CENTER
-            minWidth = dp(82)
+            minWidth = dp(88)
+            setPadding(dp(4), 0, dp(4), 0)
+            contentDescription = "Current page"
         }
         documentTools.addView(pageText)
-        documentTools.addView(actionButton("›", null, dp(40)) { changePage(1) }.apply { contentDescription = "Next page" })
-        documentTools.addView(actionButton("↓ PDF", Color.rgb(54, 88, 245), dp(62)) { savePdfPicker() }.apply { contentDescription = "Export PDF" })
-        documentTools.addView(actionButton("↗", null, dp(42)) { shareLastPdf() }.apply { contentDescription = "Share PDF" })
-        documentTools.addView(actionButton("⇧", null, dp(42)) { openTransferPicker() }.apply { contentDescription = "Send file to Windows" })
-        documentTools.addView(actionButton("⟳", null, dp(42)) { checkForUpdates(showWhenNoUpdate = true) }.apply { contentDescription = "Check updates" })
+        documentTools.addView(labeledButton("›", "Next", null, 62) { changePage(1) })
+        documentTools.addView(labeledButton("↓", "Save PDF", Color.rgb(54, 88, 245), 76) { savePdfPicker() })
+        documentTools.addView(labeledButton("↗", "Share", null, 62) { shareLastPdf() })
+        documentTools.addView(labeledButton("⇧", "Send file", null, 70) { openTransferPicker() })
+        documentTools.addView(labeledButton("⟳", "Updates", null, 70) { checkForUpdates(showWhenNoUpdate = true) })
 
         val documentScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
@@ -190,7 +203,7 @@ class MainActivity : Activity() {
             clipToPadding = false
             addView(documentTools)
         }
-        root.addView(documentScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply {
+        root.addView(documentScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(66)).apply {
             bottomMargin = dp(7)
         })
 
@@ -200,27 +213,58 @@ class MainActivity : Activity() {
             background = panelBackground(Color.WHITE, 14)
             setPadding(dp(4), dp(5), dp(4), dp(5))
         }
-        val dockControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
-        toolsSideButton = actionButton("⇄", null, dp(42)) { moveToolsRail() }.apply { contentDescription = "Move toolbar to the other side" }
-        toolsToggleButton = actionButton("‹", null, dp(42)) { toggleToolsRail() }.apply { contentDescription = "Hide or show tools" }
+        val dockControls = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        toolsSideButton = labeledButton("⇄", "Move", null, 68) { moveToolsRail() }.apply {
+            contentDescription = "Move toolbar to the other side"
+        }
+        toolsToggleButton = labeledButton("‹", "Hide", null, 68) { toggleToolsRail() }.apply {
+            contentDescription = "Hide tools"
+        }
         dockControls.addView(toolsSideButton)
         dockControls.addView(toolsToggleButton)
         toolsRail.addView(dockControls)
 
-        val tools = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL }
-        tools.addView(actionButton("✎", Color.rgb(54, 88, 245), dp(44)) { drawingView.setTool(DrawingView.Tool.PEN) }.apply { contentDescription = "Pen" })
-        tools.addView(actionButton("▰", null, dp(44)) { drawingView.setTool(DrawingView.Tool.MARKER) }.apply { contentDescription = "Marker" })
-        tools.addView(actionButton("⌫", null, dp(44)) { drawingView.setTool(DrawingView.Tool.ERASER) }.apply { contentDescription = "Eraser" })
-        tools.addView(actionButton("↶", null, dp(44)) { drawingView.undo() }.apply { contentDescription = "Undo" })
-        tools.addView(actionButton("↷", null, dp(44)) { drawingView.redo() }.apply { contentDescription = "Redo" })
-        tools.addView(actionButton("●", null, dp(44)) { chooseColor() }.apply { contentDescription = "Ink color" })
-        tools.addView(actionButton("◉", null, dp(44)) { chooseBrushSize() }.apply { contentDescription = "Brush size" })
-        tools.addView(actionButton("⌁", null, dp(44)) {
+        val tools = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        }
+        toolButtons[DrawingView.Tool.PEN] = labeledButton("✎", "Pen", Color.rgb(54, 88, 245), 68) {
+            selectTool(DrawingView.Tool.PEN)
+        }
+        toolButtons[DrawingView.Tool.MARKER] = labeledButton("▰", "Marker", null, 68) {
+            selectTool(DrawingView.Tool.MARKER)
+        }
+        toolButtons[DrawingView.Tool.ERASER] = labeledButton("⌫", "Eraser", null, 68) {
+            selectTool(DrawingView.Tool.ERASER)
+        }
+        tools.addView(toolButtons[DrawingView.Tool.PEN])
+        tools.addView(toolButtons[DrawingView.Tool.MARKER])
+        tools.addView(toolButtons[DrawingView.Tool.ERASER])
+        tools.addView(labeledButton("↶", "Undo", null, 68) { drawingView.undo() })
+        tools.addView(labeledButton("↷", "Redo", null, 68) { drawingView.redo() })
+        colorToolButton = labeledButton("●", "Color", null, 68) { chooseColor() }.apply {
+            setTextColor(currentInkColor)
+            contentDescription = "Choose ink color"
+        }
+        tools.addView(colorToolButton)
+        tools.addView(labeledButton("◉", "Size", null, 68) { chooseBrushSize() }.apply {
+            contentDescription = "Adjust pen thickness"
+        })
+        stylusToolButton = labeledButton("☝", "Touch on", null, 68) {
             touchInputEnabled = !touchInputEnabled
             drawingView.setStylusOnly(!touchInputEnabled)
-            (it as Button).text = if (touchInputEnabled) "⌁" else "✒"
-            it.contentDescription = if (touchInputEnabled) "Touch input enabled" else "Stylus only"
-        }.apply { contentDescription = "Toggle touch input" })
+            stylusToolButton.text = if (touchInputEnabled) "☝\nTouch on" else "✒\nPen only"
+            stylusToolButton.contentDescription = if (touchInputEnabled) "Touch input enabled" else "Stylus only"
+            styleToolButton(stylusToolButton, selected = !touchInputEnabled)
+        }
+        tools.addView(stylusToolButton)
+        tools.addView(labeledButton("⌧", "Clear", null, 68) { confirmClear() }.apply {
+            contentDescription = "Clear current page"
+        })
+
         toolsScroll = ScrollView(this).apply {
             isVerticalScrollBarEnabled = false
             addView(tools)
@@ -234,7 +278,8 @@ class MainActivity : Activity() {
         }
         drawingView.background = panelBackground(Color.rgb(235, 240, 250), 18)
         drawingView.clipToOutline = true
-                workspace = LinearLayout(this).apply {
+
+        workspace = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
@@ -243,30 +288,78 @@ class MainActivity : Activity() {
             marginStart = dp(4)
             marginEnd = dp(4)
         })
-        workspace.addView(toolsRail, LinearLayout.LayoutParams(dp(60), ViewGroup.LayoutParams.MATCH_PARENT))
+        workspace.addView(toolsRail, LinearLayout.LayoutParams(dp(78), ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(workspace, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply {
             bottomMargin = dp(5)
         })
 
         val hint = TextView(this).apply {
-            text = "Same Wi-Fi · Connect · Write · Save as PDF"
-            textSize = 10.5f
+            text = "Connect · Choose a tool · Write · Save PDF"
+            textSize = 11f
             gravity = Gravity.CENTER
             setTextColor(Color.rgb(92, 105, 132))
         }
-        root.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)))
+        root.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(22)))
         setContentView(root)
 
         val initial = buildTemplate("Ruled")
         drawingView.setPaper(initial, initial.width.toFloat() / initial.height.toFloat())
         updatePageLabel()
+        updateToolSelection()
     }
 
+    private fun labeledButton(icon: String, label: String, fill: Int?, width: Int, action: (View) -> Unit): Button =
+        Button(this).apply {
+            text = "$icon\\n$label"
+            textSize = 10.5f
+            isAllCaps = false
+            gravity = Gravity.CENTER
+            setLineSpacing(0f, 0.92f)
+            setTextColor(Color.rgb(38, 54, 95))
+            backgroundTintList = null
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(12).toFloat()
+                setColor(fill ?: Color.rgb(238, 242, 255))
+                setStroke(dp(1), Color.rgb(218, 225, 241))
+            }
+            minWidth = dp(width)
+            minimumWidth = dp(width)
+            minimumHeight = dp(54)
+            setPadding(dp(2), dp(3), dp(2), dp(3))
+            elevation = dp(1).toFloat()
+            setOnClickListener(action)
+            layoutParams = LinearLayout.LayoutParams(dp(width), dp(58)).apply {
+                marginEnd = dp(4)
+                bottomMargin = dp(4)
+            }
+        }
+
+    private fun styleToolButton(button: Button, selected: Boolean) {
+        button.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(12).toFloat()
+            setColor(if (selected) Color.rgb(54, 88, 245) else Color.rgb(238, 242, 255))
+            setStroke(dp(1), if (selected) Color.rgb(54, 88, 245) else Color.rgb(218, 225, 241))
+        }
+        button.setTextColor(if (selected) Color.WHITE else Color.rgb(38, 54, 95))
+        button.elevation = dp(if (selected) 3 else 1).toFloat()
+    }
+
+    private fun selectTool(tool: DrawingView.Tool) {
+        selectedTool = tool
+        drawingView.setTool(tool)
+        updateToolSelection()
+    }
+
+    private fun updateToolSelection() {
+        toolButtons.forEach { (tool, button) -> styleToolButton(button, tool == selectedTool) }
+    }
 
     private fun toggleToolsRail() {
         val visible = toolsScroll.visibility == View.VISIBLE
         toolsScroll.visibility = if (visible) View.GONE else View.VISIBLE
-        toolsToggleButton.text = if (visible) "›" else "‹"
+        toolsToggleButton.text = if (visible) "›\\nShow" else "‹\\nHide"
         toolsToggleButton.contentDescription = if (visible) "Show tools" else "Hide tools"
     }
 
@@ -275,7 +368,8 @@ class MainActivity : Activity() {
         toolsOnLeft = !toolsOnLeft
         workspace.removeView(toolsRail)
         if (toolsOnLeft) workspace.addView(toolsRail, 0) else workspace.addView(toolsRail)
-        toolsSideButton.contentDescription = if (toolsOnLeft) "Toolbar on left" else "Toolbar on right"
+        toolsSideButton.text = if (toolsOnLeft) "⇄\\nMove right" else "⇄\\nMove left"
+        toolsSideButton.contentDescription = if (toolsOnLeft) "Move toolbar to the right" else "Move toolbar to the left"
     }
 
     private fun openTransferPicker() {
@@ -469,7 +563,12 @@ class MainActivity : Activity() {
             Color.rgb(24, 142, 91), Color.rgb(133, 82, 204), Color.rgb(230, 133, 31)
         )
         android.app.AlertDialog.Builder(this).setTitle("Ink color")
-            .setItems(names) { _, i -> drawingView.setColor(colors[i]) }.show()
+            .setItems(names) { _, i ->
+                currentInkColor = colors[i]
+                drawingView.setColor(colors[i])
+                colorToolButton.setTextColor(colors[i])
+                selectTool(DrawingView.Tool.PEN)
+            }.show()
     }
 
     private fun chooseBrushSize() {
