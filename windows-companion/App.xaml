@@ -3,20 +3,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="WindowBrush" Color="#202124" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#2B2E31" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#83D2C6" />
-        <SolidColorBrush x:Key="TextBrush" Color="#F2F4F3" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#AEB5B7" />
-        <SolidColorBrush x:Key="BorderBrush" Color="#454B4D" />
+        <SolidColorBrush x:Key="WindowBrush" Color="#F4F6FC" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#3658F5" />
+        <SolidColorBrush x:Key="TextBrush" Color="#17213D" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#5C6984" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#DCE3F3" />
         <Style TargetType="Button">
-            <Setter Property="Foreground" Value="#F2F4F3" />
-            <Setter Property="Background" Value="#303438" />
-            <Setter Property="BorderBrush" Value="#4B5556" />
+            <Setter Property="Foreground" Value="#26365F" />
+            <Setter Property="Background" Value="#EEF2FF" />
+            <Setter Property="BorderBrush" Value="#D6DFFC" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="14,9" />
             <Setter Property="Margin" Value="0,0,8,0" />
             <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="MinHeight" Value="36" />
             <Setter Property="Template">
@@ -29,10 +30,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.88"/>
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#E1E9FF"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#91A7FF"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.72"/>
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.78"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45"/>
@@ -43,7 +45,9 @@
             </Setter>
         </Style>
         <Style TargetType="TextBox">
-            <Setter Property="CaretBrush" Value="#83D2C6"/>
+            <Setter Property="Foreground" Value="#17213D"/>
+            <Setter Property="CaretBrush" Value="#3658F5"/>
+            <Setter Property="SelectionBrush" Value="#B9C8FF"/>
         </Style>
     </Application.Resources>
 </Application>

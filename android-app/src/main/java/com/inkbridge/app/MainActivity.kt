@@ -76,8 +76,12 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(29, 31, 32)
-        window.navigationBarColor = Color.rgb(29, 31, 32)
+        window.statusBarColor = Color.rgb(244, 246, 252)
+        window.navigationBarColor = Color.rgb(244, 246, 252)
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         client = WifiTcpClient(
@@ -127,7 +131,7 @@ class MainActivity : Activity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(10), dp(8), dp(10), dp(8))
-            setBackgroundColor(Color.rgb(29, 31, 32))
+            setBackgroundColor(Color.rgb(244, 246, 252))
         }
 
         val header = LinearLayout(this).apply {
@@ -138,20 +142,20 @@ class MainActivity : Activity() {
             text = "INKBRIDGE"
             textSize = 18f
             letterSpacing = 0.12f
-            setTextColor(Color.WHITE)
+            setTextColor(Color.rgb(23, 33, 61))
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
         statusText = TextView(this).apply {
             text = "○ Wi-Fi not connected"
             textSize = 11f
             maxLines = 1
-            setTextColor(Color.rgb(177, 187, 185))
+            setTextColor(Color.rgb(92, 105, 132))
             gravity = Gravity.CENTER_VERTICAL
         }
-        connectButton = actionButton("Connect Wi-Fi", Color.rgb(75, 151, 140), dp(112)) { onConnectClicked() }
+        connectButton = actionButton("Connect Wi-Fi", Color.rgb(54, 88, 245), dp(112)) { onConnectClicked() }
         fullScreenButton = actionButton("Full screen", null, dp(96)) { toggleFullScreen() }
         connectButton.setOnLongClickListener { showWifiConnectDialog(); true }
-        header.background = panelBackground(Color.rgb(39, 43, 44), 17)
+        header.background = panelBackground(Color.WHITE, 17)
         header.setPadding(dp(12), dp(5), dp(8), dp(5))
         header.addView(brand, LinearLayout.LayoutParams(0, dp(48), 1.0f))
         header.addView(statusText, LinearLayout.LayoutParams(0, dp(48), 1.1f))
@@ -168,20 +172,20 @@ class MainActivity : Activity() {
         pageText = TextView(this).apply {
             text = "Notebook · 1 / 10"
             textSize = 10f
-            setTextColor(Color.rgb(195, 204, 201))
+            setTextColor(Color.rgb(39, 53, 86))
             gravity = Gravity.CENTER
             minWidth = dp(82)
         }
         documentTools.addView(pageText)
         documentTools.addView(actionButton("›", null, dp(40)) { changePage(1) }.apply { contentDescription = "Next page" })
-        documentTools.addView(actionButton("↓ PDF", Color.rgb(75, 151, 140), dp(62)) { savePdfPicker() }.apply { contentDescription = "Export PDF" })
+        documentTools.addView(actionButton("↓ PDF", Color.rgb(54, 88, 245), dp(62)) { savePdfPicker() }.apply { contentDescription = "Export PDF" })
         documentTools.addView(actionButton("↗", null, dp(42)) { shareLastPdf() }.apply { contentDescription = "Share PDF" })
         documentTools.addView(actionButton("⇧", null, dp(42)) { openTransferPicker() }.apply { contentDescription = "Send file to Windows" })
         documentTools.addView(actionButton("⟳", null, dp(42)) { checkForUpdates(showWhenNoUpdate = true) }.apply { contentDescription = "Check updates" })
 
         val documentScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
-            background = panelBackground(Color.rgb(39, 43, 44), 15)
+            background = panelBackground(Color.WHITE, 15)
             setPadding(dp(7), dp(5), dp(7), dp(5))
             clipToPadding = false
             addView(documentTools)
@@ -193,7 +197,7 @@ class MainActivity : Activity() {
         toolsRail = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            background = panelBackground(Color.rgb(25, 32, 38), 14)
+            background = panelBackground(Color.WHITE, 14)
             setPadding(dp(4), dp(5), dp(4), dp(5))
         }
         val dockControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
@@ -204,7 +208,7 @@ class MainActivity : Activity() {
         toolsRail.addView(dockControls)
 
         val tools = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL }
-        tools.addView(actionButton("✎", Color.rgb(75, 151, 140), dp(44)) { drawingView.setTool(DrawingView.Tool.PEN) }.apply { contentDescription = "Pen" })
+        tools.addView(actionButton("✎", Color.rgb(54, 88, 245), dp(44)) { drawingView.setTool(DrawingView.Tool.PEN) }.apply { contentDescription = "Pen" })
         tools.addView(actionButton("▰", null, dp(44)) { drawingView.setTool(DrawingView.Tool.MARKER) }.apply { contentDescription = "Marker" })
         tools.addView(actionButton("⌫", null, dp(44)) { drawingView.setTool(DrawingView.Tool.ERASER) }.apply { contentDescription = "Eraser" })
         tools.addView(actionButton("↶", null, dp(44)) { drawingView.undo() }.apply { contentDescription = "Undo" })
@@ -228,7 +232,7 @@ class MainActivity : Activity() {
             setStylusOnly(false)
             setBrushSizeDp(3.5f)
         }
-        drawingView.background = panelBackground(Color.rgb(34, 38, 39), 18)
+        drawingView.background = panelBackground(Color.rgb(235, 240, 250), 18)
         drawingView.clipToOutline = true
                 workspace = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -248,7 +252,7 @@ class MainActivity : Activity() {
             text = "Same Wi-Fi · Connect · Write · Save as PDF"
             textSize = 10.5f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(151, 164, 161))
+            setTextColor(Color.rgb(92, 105, 132))
         }
         root.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)))
         setContentView(root)
@@ -395,19 +399,19 @@ class MainActivity : Activity() {
             addView(TextView(this@MainActivity).apply {
                 text = "Connect both devices to the same Wi-Fi network or hotspot. Enter the IP and the 6-digit code shown in InkBridge on Windows."
                 textSize = 13f
-                setTextColor(Color.rgb(190, 202, 220))
+                setTextColor(Color.rgb(72, 86, 116))
                 setPadding(0, 0, 0, dp(12))
             })
             addView(TextView(this@MainActivity).apply {
                 text = "LAPTOP IP ADDRESS"
                 textSize = 10f
-                setTextColor(Color.rgb(130, 158, 195))
+                setTextColor(Color.rgb(54, 88, 245))
             })
             addView(hostInput)
             addView(TextView(this@MainActivity).apply {
                 text = "CONNECTION CODE"
                 textSize = 10f
-                setTextColor(Color.rgb(130, 158, 195))
+                setTextColor(Color.rgb(54, 88, 245))
                 setPadding(0, dp(10), 0, 0)
             })
             addView(codeInput)
@@ -417,8 +421,8 @@ class MainActivity : Activity() {
             .setTitle("Connect to your laptop")
             .setView(fields)
             .setPositiveButton("Connect") { _, _ ->
-                val host = hostInput.text.toString().trim()
-                val code = codeInput.text.toString().trim()
+                val host = normalizeDigits(hostInput.text.toString()).trim()
+                val code = normalizeDigits(codeInput.text.toString()).trim()
                 if (host.isBlank() || code.length != 6 || !code.all(Char::isDigit)) {
                     Toast.makeText(this, "Enter the laptop IP and its 6-digit connection code.", Toast.LENGTH_LONG).show()
                     showWifiConnectDialog()
@@ -431,6 +435,13 @@ class MainActivity : Activity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun normalizeDigits(value: String): String = buildString(value.length) {
+        value.forEach { character ->
+            val digit = Character.digit(character, 10)
+            append(if (digit in 0..9) ('0'.code + digit).toChar() else character)
+        }
     }
 
     private fun toggleFullScreen() {
@@ -737,20 +748,20 @@ class MainActivity : Activity() {
         shape = GradientDrawable.RECTANGLE
         cornerRadius = dp(radiusDp).toFloat()
         setColor(fill)
-        setStroke(dp(1), Color.rgb(75, 82, 83))
+        setStroke(dp(1), Color.rgb(218, 225, 241))
     }
 
     private fun actionButton(label: String, buttonColor: Int?, width: Int = 0, action: (View) -> Unit): Button = Button(this).apply {
         text = label
         textSize = 11f
         isAllCaps = false
-        setTextColor(if (buttonColor == Color.rgb(75, 151, 140)) Color.rgb(15, 28, 26) else Color.WHITE)
+        setTextColor(if (buttonColor == Color.rgb(54, 88, 245)) Color.WHITE else Color.rgb(38, 54, 95))
         backgroundTintList = null
         background = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = dp(12).toFloat()
-            setColor(buttonColor ?: Color.rgb(48, 53, 54))
-            setStroke(dp(1), Color.rgb(75, 82, 83))
+            setColor(buttonColor ?: Color.rgb(238, 242, 255))
+            setStroke(dp(1), Color.rgb(218, 225, 241))
         }
         minWidth = 0
         minimumWidth = 0

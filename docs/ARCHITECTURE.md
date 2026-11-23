@@ -17,7 +17,7 @@
 - .NET 8 WPF desktop application.
 - A TcpListener binds to all IPv4 interfaces on TCP port 45832. It accepts one tablet stream at a time.
 - A cryptographically random six-digit session code is generated in memory whenever the Windows companion starts. It is never persisted; the user can regenerate it while disconnected. The Android client must provide the currently displayed code in the first JSON handshake frame.
-- The receiver validates each frame and updates InkCanvasView, a page preview embedded inside the main application window.
+- The receiver validates each frame and updates InkCanvasView. The same live preview surface can be detached into an independent, resizable Windows window with native minimize/maximize/restore controls; closing that window reparents the live surface back into the main app.
 - The optional OverlayWindow remains a transparent topmost click-through surface for presenting over PowerPoint, PDF readers and browsers. It is disabled by default and can be enabled from the Windows UI.
 - UpdateService checks public GitHub Releases and offers a verified self-update when a newer Windows build is published.
 
@@ -25,7 +25,7 @@
 
 - Windows listens on 0.0.0.0:45832, making the service reachable through active Wi-Fi/Ethernet interfaces.
 - Android and Windows must be on the same reachable LAN or hotspot. Guest networks with client isolation can block peer-to-peer traffic.
-- The initial client frame is {"type":"hello","token":"123456","protocol":2}. Windows replies with {"type":"welcome","protocol":2} or {"type":"denied"}.
+- The initial client frame is {"type":"hello","token":"123456","protocol":2}. Android normalizes Arabic-Indic and Persian numerals to ASCII digits before sending the token, matching the Windows-generated code. Windows validates protocol version 2 and replies with {"type":"welcome","protocol":2} or {"type":"denied"}. The Windows handshake has an eight-second timeout so an incomplete client cannot stall the listener.
 - Each following frame is a compact UTF-8 JSON object followed by a newline. A receiver reads complete lines rather than assuming one socket read equals one frame.
 - The paper frame contains the page aspect ratio and a Base64 JPEG image. Drawing frames contain normalized page coordinates, pressure, color and width.
 - The 6-digit session token is a local pairing gate, not end-to-end encryption. It changes on each Windows companion launch. Use a trusted private network; Windows Firewall should allow InkBridge on Private networks.
@@ -67,7 +67,7 @@ Android stylus/touch MotionEvent
 - File transfer stays on the existing authenticated local Wi-Fi connection.
 - The drawing session stays on the local network; GitHub is used for release metadata and update downloads.
 - One Android device and one Windows receiver at a time.
-- The Windows session code is held in memory only and rotates on application restart. Android remembers the laptop address, not the old session code. The code should not be treated as cryptographic encryption.
+- The Windows session code is held in memory only and rotates on application restart. Android remembers the laptop address, not the old session code. Arabic-Indic and Persian digits entered on Android are normalized before pairing. The code should not be treated as cryptographic encryption.
 
 ## Overlay visibility
 
