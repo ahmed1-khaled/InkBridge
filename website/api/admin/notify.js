@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       androidAccepted: sent,
       androidFailed: failed,
       windowsQueued: windowsSnapshot?.size || 0,
-      windowsDelivery: "Windows Companion clients retrieve queued announcements while the app is running."
+      windowsDelivery: "Queued for Windows installations after the Companion polling client is installed."
     });
   } catch (error) {
     return json(res, error.status || 500, { error: error.message || "Notification could not be sent." });
