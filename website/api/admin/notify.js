@@ -39,14 +39,20 @@ export default async function handler(req, res) {
         const result = await messaging.sendEach(messages);
         sent += result.successCount;
         failed += result.failureCount;
-        const cleanup = db.batch();
+        const invalidTokenRefs = [];
         result.responses.forEach((response, index) => {
           const code = response.error?.code || "";
           if (code.includes("registration-token-not-registered") || code.includes("invalid-registration-token")) {
-            cleanup.update(batch[index].ref, { fcmToken: FieldValue.delete(), notificationsEnabled: false });
+            invalidTokenRefs.push(batch[index].ref);
           }
         });
-        await cleanup.commit();
+        if (invalidTokenRefs.length) {
+          const cleanup = db.batch();
+          for (const ref of invalidTokenRefs) {
+            cleanup.update(ref, { fcmToken: FieldValue.delete(), notificationsEnabled: false });
+          }
+          await cleanup.commit();
+        }
       }
     }
 
