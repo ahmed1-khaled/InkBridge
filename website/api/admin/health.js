@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     await requireAdmin(req, auth);
     const probe = await db.collection("devices").limit(1).get();
     return json(res, 200, {
-      overall: "operational",
+      overall: webConfigured ? "operational" : "degraded",
       services: {
         firebaseAdmin: "connected",
         firestore: "connected",
