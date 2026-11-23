@@ -196,7 +196,7 @@ class MainActivity : Activity() {
             background = panelBackground(Color.rgb(25, 32, 38), 14)
             setPadding(dp(4), dp(5), dp(4), dp(5))
         }
-        val dockControls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        val dockControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         toolsSideButton = actionButton("⇄", null, dp(42)) { moveToolsRail() }.apply { contentDescription = "Move toolbar to the other side" }
         toolsToggleButton = actionButton("‹", null, dp(42)) { toggleToolsRail() }.apply { contentDescription = "Hide or show tools" }
         dockControls.addView(toolsSideButton)
@@ -230,10 +230,7 @@ class MainActivity : Activity() {
         }
         drawingView.background = panelBackground(Color.rgb(34, 38, 39), 18)
         drawingView.clipToOutline = true
-        val canvasParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-        canvasParams.topMargin = dp(2)
-        canvasParams.bottomMargin = dp(5)
-        workspace = LinearLayout(this).apply {
+                workspace = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
@@ -242,7 +239,7 @@ class MainActivity : Activity() {
             marginStart = dp(4)
             marginEnd = dp(4)
         })
-        workspace.addView(toolsRail, LinearLayout.LayoutParams(dp(54), ViewGroup.LayoutParams.MATCH_PARENT))
+        workspace.addView(toolsRail, LinearLayout.LayoutParams(dp(60), ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(workspace, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply {
             bottomMargin = dp(5)
         })
