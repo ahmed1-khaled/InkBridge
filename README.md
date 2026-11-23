@@ -13,8 +13,9 @@ InkBridge is a focused digital whiteboard for teaching, explaining, annotating P
 - **Live page mirroring:** the page background, imported PDF page or notebook template and pen strokes are mirrored into the Windows app's own preview panel.
 - **Notebook pages:** Blank, Ruled, Grid, Dots and Cornell templates with 1–100 pages.
 - **PDF workflow:** open PDFs, annotate pages, navigate, export an annotated copy and share it.
-- **Windows companion:** modern dark interface, live in-app page preview, status and connection details. An optional transparent click-through overlay is available for PowerPoint, PDF readers and browsers.
-- **Local Wi-Fi connection:** both devices join the same Wi-Fi network or hotspot. Windows shows its local IP addresses and a 6-digit pairing code; Android connects directly to TCP port 45832.
+- **Two-way file transfer:** send files from Android to Windows or from Windows to Android over the authenticated local connection, with no cloud upload.
+- **Windows companion:** live in-app page preview, PNG capture of the full page or a custom selected area, session code controls, file transfer and status details. An optional transparent click-through overlay is available for PowerPoint, PDF readers and browsers.
+- **Local Wi-Fi connection:** both devices join the same Wi-Fi network or hotspot. Windows shows its local IP addresses and a fresh 6-digit session code each time the companion starts; Android connects directly to TCP port 45832.
 - **GitHub updates:** successful builds publish versioned Android APK and Windows EXE assets when the Android signing key is configured.
 
 ## Quick start
@@ -31,7 +32,7 @@ InkBridge is a focused digital whiteboard for teaching, explaining, annotating P
 1. Connect the Android device to the **same Wi-Fi network or hotspot** as the laptop.
 2. Open InkBridge and tap **Connect Wi-Fi**.
 3. Enter one of the laptop IP addresses and the 6-digit code displayed in the Windows app.
-4. The app remembers the connection details. Tap Connect again to reconnect after a drop.
+4. The app remembers the laptop address. The session code changes when the Windows companion restarts, so enter the code currently shown on the laptop.
 
 Bluetooth pairing is not required. An Internet connection is not required for the live writing session; the devices only need local network connectivity. See [Wi-Fi setup](docs/WIFI_SETUP.md) for troubleshooting.
 
@@ -96,3 +97,13 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/WIFI_SETUP.md](docs/WIFI
 ## License
 
 MIT. See LICENSE.
+
+
+## Capture and file sharing
+
+- In the Windows preview, use **Capture page** to save the complete tablet page as PNG, or **Select area** and drag to save a custom crop.
+- Use the **Send file to tablet** control in Windows to send a local file to Android.
+- On Android, use the upload/share icon in the document bar to choose a file and send it to Windows.
+- Files received by Windows are saved in `Documents/InkBridge Transfers`.
+- Files received on Android 10+ are saved in `Downloads/InkBridge`.
+- The current transfer limit is 100 MB per file. Transfers stay on the authenticated local Wi-Fi connection.
